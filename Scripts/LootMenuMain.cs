@@ -1,75 +1,100 @@
 ﻿using UnityEngine;
-using DaggerfallConnect;
-using DaggerfallConnect.Arena2;
-using System.Collections;
 using DaggerfallWorkshop;
 using DaggerfallWorkshop.Game;
-using DaggerfallWorkshop.Game.Entity;
-using DaggerfallWorkshop.Game.Items;
-using DaggerfallWorkshop.Game.UserInterface;
-using DaggerfallWorkshop.Game.UserInterfaceWindows;
-using DaggerfallWorkshop.Game.Utility;
-using DaggerfallWorkshop.Game.Formulas;
 using DaggerfallWorkshop.Game.Utility.ModSupport;
-
+using DaggerfallWorkshop.Utility;
+using DaggerfallWorkshop.Utility.AssetInjection;
+using System.IO;
 
 
 namespace LootMenuMod
 {
     public class LootMenuMain : MonoBehaviour
     {
-        static DaggerfallMessageBox lootMenuMessageBox;
-        static LootMenuUI lootMenuUIScreen;
         Camera mainCamera;
+        DaggerfallUI daggerfallUI;
+
+        Texture2D backgroundTexture; 
+
+        string backgroundTextureName = "background";
+
+        private GUIStyle guiStyle = new GUIStyle();
+        private float UIScale;
+        float uiScaleModifier = 1;
         int playerLayerMask = 0;
-        const float RayDistance = 76.8f;  
-        const float DefaultActivationDistance = 6.4f;
+        const float RayDistance = 32f;
+        const float DefaultActivationDistance = 3.2f;
         bool enableLootMenu = false;
-        bool disableLootMenu = false;
+
+        void Awake()
+        {
+            backgroundTexture = DaggerfallUI.GetTextureFromResources(backgroundTextureName);
+            backgroundTexture.filterMode = FilterMode.Point;
+        }
         
         void Start()
         {
+            daggerfallUI = GameObject.Find("DaggerfallUI").GetComponent<DaggerfallUI>();
+            guiStyle.alignment = TextAnchor.LowerCenter;
+
             playerLayerMask = ~(1 << LayerMask.NameToLayer("Player"));
             mainCamera = GameManager.Instance.MainCamera;
         }
-        
+        void LateUpdate()
+        {
+            UIScale = daggerfallUI.DaggerfallHUD.HUDVitals.Scale.x * uiScaleModifier;
+            guiStyle.fontSize = (int)(10.0f * UIScale);
+        }
         void Update()
         {
-            DaggerfallLoot loot;
-            
-            Debug.Log(enableLootMenu);
-            Debug.Log(disableLootMenu);
-            
-            Ray ray = new Ray();
-            
-            ray = new Ray(mainCamera.transform.position, mainCamera.transform.forward);
-            
-            RaycastHit hit;
-            bool hitSomething = Physics.Raycast(ray, out hit, RayDistance, playerLayerMask);
-            if (hitSomething)
+            if (GameManager.Instance.IsPlayerOnHUD)
             {
-                if (hit.distance < DefaultActivationDistance)
+                DaggerfallLoot loot;
+                Ray ray = new Ray();
+
+                ray = new Ray(mainCamera.transform.position, mainCamera.transform.forward);
+
+                RaycastHit hit;
+                bool hitSomething = Physics.Raycast(ray, out hit, RayDistance, playerLayerMask);
+                if (hitSomething)
                 {
-                    lootMenuUIScreen = new LootMenuUI(DaggerfallWorkshop.Game.DaggerfallUI.UIManager);
-                if (LootCheck(hit, out loot))
-                {
-                        DaggerfallUI.UIManager.PushWindow(lootMenuUIScreen);
-                }
-                else
-                {
-                        disableLootMenu = true;
+                    if (hit.distance < DefaultActivationDistance)
+                    {
+                        if (LootCheck(hit, out loot))
+                        {
+                            enableLootMenu = true;
+                        }
+                        else
+                        {
+                            enableLootMenu = false;
+                        }
+                    }
                 }
             }
-                // if (enableLootMenu == true && disableLootMenu == false)
-                // {
-                //     DaggerfallUI.UIManager.PushWindow(lootMenuUIScreen);
-                // }
-                // else if (disableLootMenu == true)
-                // {
-                //     lootMenuUIScreen.CloseWindow();
-                // }
-                Debug.Log(disableLootMenu);
-            }  
+            // if (GameManager.Instance.IsPlayerOnHUD)
+            // {
+            //     if (InputManager.Instance.GetKeyDown(KeyCode.O))
+            //     {
+            //         enableLootMenu = true;
+            //     }
+            //     else if (InputManager.Instance.GetKeyDown(KeyCode.P))
+            //     {
+            //         enableLootMenu = false;
+            //     }
+            // }
+        }
+        private void OnGUI()
+        {
+            GUI.color = Color.white;
+            //guiStyle.font = DaggerfallUI.TitleFont;
+            GUI.depth = 0;
+
+            Debug.Log(enableLootMenu);
+            if(enableLootMenu == true)
+            {
+                GUI.DrawTexture(new Rect(Screen.width - (Screen.width / 5), Screen.height / 8, Screen.width / 5, Screen.height / 2), backgroundTexture);
+                GUI.Label(new Rect(Screen.width - (Screen.width / 5), Screen.height / 8, Screen.width / 5, Screen.height / 8), "text label 1", guiStyle);
+            }
         }
 
         [Invoke(StateManager.StateTypes.Game, 0)]
@@ -82,21 +107,8 @@ namespace LootMenuMod
 
             ModManager.Instance.GetMod(initParams.ModTitle).IsReady = true;
         }
+
         
-        public static void DisplayMessage(string message = "Hello World!")
-        {
-            if (lootMenuMessageBox == null)
-            {
-                lootMenuMessageBox = new DaggerfallMessageBox(DaggerfallWorkshop.Game.DaggerfallUI.UIManager);
-                lootMenuMessageBox.AllowCancel = true;
-                lootMenuMessageBox.ClickAnywhereToClose = true;
-                lootMenuMessageBox.ParentPanel.BackgroundColor = Color.clear;
-            }
-
-            lootMenuMessageBox.SetText(message);
-            DaggerfallUI.UIManager.PushWindow(lootMenuMessageBox);
-        }
-
         private bool LootCheck(RaycastHit hitInfo, out DaggerfallLoot loot)
         {
             loot = hitInfo.transform.GetComponent<DaggerfallLoot>();

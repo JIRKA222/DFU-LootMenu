@@ -1,0 +1,11 @@
+{
+    "ModTitle": "LootMenu",
+    "ModVersion": "0.0.2",
+    "ModAuthor": "Shapur",
+    "DFUnity_Version": "0.11.4",
+    "GUID": "2f0d54f0-0407-4b7f-815a-680034c1efb4",
+    "Files": [
+        "Assets/Game/Mods/LootMenu/Scripts/LootMenuMain.cs",
+        "Assets/Game/Mods/LootMenu/Scripts/LootMenuUI.cs"
+    ]
+}
