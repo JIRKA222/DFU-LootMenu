@@ -32,17 +32,18 @@ namespace LootMenuMod
 
         KeyCode downKeyCode;
         KeyCode upKeyCode;
+        KeyCode takeKeyCode;
+        KeyCode openKeyCode;
 
         Texture2D backgroundTexture;
         Texture2D borderTexture;
         
-        List<string> labelText = new List<string>();
+        List<string> itemNameList = new List<string>();
+        List<string> itemOtherList = new List<string>();
 
         bool enableLootMenu;
 
-        const int itemsStartOffset = 2;
-        int currentItem;
-        int currentLabelOffset;
+        const int numOfItemLabels = 6;
         int playerLayerMask;
         int selectedItem;
         int wait;
@@ -81,12 +82,16 @@ namespace LootMenuMod
             borderTexture= DaggerfallUI.GetTextureFromResources("border");
             borderTexture.filterMode = FilterMode.Point;
 
-            currentLabelOffset = 0;
             selectedItem = 0;
             wait = 0;
 
             upKeyCode = KeyCode.UpArrow;
             downKeyCode = KeyCode.DownArrow;
+            takeKeyCode = KeyCode.E;
+            openKeyCode = KeyCode.R;
+
+            itemNameList = new List<string>();
+            itemOtherList = new List<string>();
         }
 
         private void Update()
@@ -95,12 +100,10 @@ namespace LootMenuMod
             {
                 if (InputManager.Instance.GetKeyDown(upKeyCode) || Input.GetAxis("Mouse ScrollWheel") > 0f)
                 {
-                    currentLabelOffset -= 1;
                     selectedItem -= 1;
                 }
                 if(InputManager.Instance.GetKeyDown(downKeyCode) || Input.GetAxis("Mouse ScrollWheel") < 0f)
                 {
-                    currentLabelOffset += 1;
                     selectedItem += 1;
                 }
  
@@ -130,9 +133,8 @@ namespace LootMenuMod
                             
                             if(!enableLootMenu)
                             {
-                                labelText = UpdateText(loot);
+                                UpdateText(loot, out itemNameList, out itemOtherList);
 
-                                currentLabelOffset = 0;
                                 selectedItem = 0;
                                 enableLootMenu = true;
                             }
@@ -156,52 +158,75 @@ namespace LootMenuMod
             if (enableLootMenu && GameManager.Instance.IsPlayerOnHUD)
             {   
                 Vector2 backgroundTextureSize = new Vector2(Screen.width / 5, Screen.height * 0.8f);
-                int xSize = Screen.width / 5;
-                int ySize = Screen.height / 10;
+
+                int selectTexturePos = 0;
+                int itemDisplayOffset = 0;
                 int xPos = Screen.width - (Screen.width / 5);
+                int xSize = Screen.width / 5;
                 int yPos = Screen.height / 10;
+                int ySize = Screen.height / 10;
 
                 GUI.color = Color.white;
                 GUI.depth = 0;
-                
-                if (labelText.Count < 9)
-                    currentLabelOffset = 0;
-                else if (currentLabelOffset < 0)
-                    currentLabelOffset = 0;
-                else if ((labelText.Count - 9) < currentLabelOffset)
-                    currentLabelOffset = labelText.Count - itemsStartOffset - 6; 
-
+                Debug.Log("");
                 if (selectedItem < 0)
-                    selectedItem = 0;
-                else if (selectedItem > (labelText.Count - (itemsStartOffset + 1)))
-                    selectedItem = labelText.Count - (itemsStartOffset + 1);
-
-                int selectTexturePos;
-                if (selectedItem < 6)
                 {
-                    selectTexturePos = selectedItem + (itemsStartOffset + 1);
-                    if (currentLabelOffset > 0)
-                        currentLabelOffset -= 1;
+                    Debug.Log("1");
+                    selectedItem = 0;
+                    selectTexturePos = 0;
+                    itemDisplayOffset = 0;
+                }
+                else if (selectedItem < numOfItemLabels && selectedItem >= itemNameList.Count)
+                {
+                    Debug.Log("2");
+                    selectedItem = itemNameList.Count - 1;
+                    selectTexturePos = itemNameList.Count - 1;
+                    itemDisplayOffset = 0;
+                }
+                else if (selectedItem < numOfItemLabels)
+                {
+                    Debug.Log("3");
+                    selectTexturePos = selectedItem;
+                    itemDisplayOffset = 0;
+                }
+                else if (selectedItem >= itemNameList.Count)
+                {
+                    Debug.Log("4");
+                    selectedItem = itemNameList.Count - 1;
+                    selectTexturePos = 5;
+                    itemDisplayOffset = selectedItem - itemNameList.Count;
                 }
                 else
-                    selectTexturePos = 8;
+                {
+                    Debug.Log("5");
+                    selectTexturePos = numOfItemLabels - 1;
+                    itemDisplayOffset = selectedItem;
+                }
 
-                int currentItem = currentLabelOffset + itemsStartOffset;
+                if (itemDisplayOffset > itemNameList.Count - numOfItemLabels && itemNameList.Count > numOfItemLabels)
+                {    
+                    itemDisplayOffset = itemNameList.Count - numOfItemLabels;
+                    Debug.Log("5 - 0");
+                }
+                
+                Debug.Log(selectedItem);
+                Debug.Log(selectTexturePos);
+                Debug.Log(itemDisplayOffset);
 
                 GUI.DrawTexture(new Rect(new Vector2(xPos, Screen.height / 10), backgroundTextureSize), backgroundTexture);
-                GUI.DrawTexture(new Rect(xPos, yPos * selectTexturePos, xSize, ySize), borderTexture);
+                GUI.DrawTexture(new Rect(xPos, yPos * (selectTexturePos + 3), xSize, ySize), borderTexture);
 
-                GUI.Label(new Rect(xPos, yPos * 1, xSize, ySize), labelText[0], guiStyle);
-                GUI.Label(new Rect(xPos, yPos * 2, xSize, ySize), labelText[1] + " Kg", guiStyle);
+                GUI.Label(new Rect(xPos, yPos * 1, xSize, ySize), itemOtherList[0], guiStyle);
+                GUI.Label(new Rect(xPos, yPos * 2, xSize, ySize), itemOtherList[1] + " Kg", guiStyle);
 
-                for (int i = itemsStartOffset; i < labelText.Count; i++)
+                int currentItem = itemDisplayOffset;
+                for (int i = 0; i < itemNameList.Count; i++)
                 {
-                    if (i < 8 && currentItem < labelText.Count)
+                    if (i < numOfItemLabels && currentItem < itemNameList.Count)
                     {
-                        Debug.Log(currentItem);
-                        Debug.Log(labelText.Count);
+                        Debug.Log(itemNameList[currentItem]);
                         
-                        GUI.Label(new Rect(xPos, yPos * (i + 1), xSize, ySize), labelText[currentItem], guiStyle);
+                        GUI.Label(new Rect(xPos, yPos * (i + 3), xSize, ySize), itemNameList[currentItem], guiStyle);
                     }
                     currentItem++;
                 }
@@ -215,28 +240,32 @@ namespace LootMenuMod
             return loot != null;
         }
 
-        private List<string> UpdateText(DaggerfallLoot loot)
+        private void UpdateText(DaggerfallLoot loot, out List<string> outputItemsNames, out List<string> outputItemsOther)
         {
-            List<string> output = new List<string>();
             ItemCollection items = loot.Items;
+            outputItemsNames = new List<string>();
+            outputItemsOther = new List<string>();
 
             if (items.Count == 0)
-                return output;
+                return;
 
             if(String.IsNullOrEmpty(loot.entityName))
-                output.Add("Lootpile");
+                outputItemsOther.Add("Lootpile");
             else
-                output.Add(loot.entityName);
+                outputItemsOther.Add(loot.entityName);
             
-            output.Add(items.GetWeight().ToString());
+            outputItemsOther.Add(items.GetWeight().ToString());
 
             for (int i = 0; i < items.Count; i++)
             {
                 DaggerfallUnityItem item;
+                string itemName;
+
                 item = items.GetItem(i);
-                output.Add(itemHelper.ResolveItemLongName(item));
+                itemName = itemHelper.ResolveItemLongName(item);
+                if (itemName != "Gold Pieces")
+                    outputItemsNames.Add(itemHelper.ResolveItemLongName(item));
             }
-            return output;
         }
     }
 }
