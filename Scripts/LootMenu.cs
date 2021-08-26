@@ -168,8 +168,8 @@ namespace LootMenuMod
                     currentLabelOffset = 0;
                 else if (currentLabelOffset < 0)
                     currentLabelOffset = 0;
-                else if ((labelText.Count - 8) <= currentLabelOffset)
-                    currentLabelOffset = labelText.Count - itemsStartOffset - 7; 
+                else if ((labelText.Count - 9) < currentLabelOffset)
+                    currentLabelOffset = labelText.Count - itemsStartOffset - 6; 
 
                 if (selectedItem < 0)
                     selectedItem = 0;
@@ -179,7 +179,7 @@ namespace LootMenuMod
                 int selectTexturePos;
                 if (selectedItem < 6)
                 {
-                    selectTexturePos = selectedItem + 3;
+                    selectTexturePos = selectedItem + (itemsStartOffset + 1);
                     if (currentLabelOffset > 0)
                         currentLabelOffset -= 1;
                 }
@@ -196,9 +196,13 @@ namespace LootMenuMod
 
                 for (int i = itemsStartOffset; i < labelText.Count; i++)
                 {
-                    if (i < 9 && currentItem < labelText.Count)
+                    if (i < 8 && currentItem < labelText.Count)
+                    {
+                        Debug.Log(currentItem);
+                        Debug.Log(labelText.Count);
+                        
                         GUI.Label(new Rect(xPos, yPos * (i + 1), xSize, ySize), labelText[currentItem], guiStyle);
-
+                    }
                     currentItem++;
                 }
             }
