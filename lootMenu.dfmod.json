@@ -1,11 +1,12 @@
 {
     "ModTitle": "LootMenu",
-    "ModVersion": "0.0.2",
+    "ModVersion": "0.0.1",
     "ModAuthor": "Shapur",
-    "DFUnity_Version": "0.11.4",
-    "GUID": "2f0d54f0-0407-4b7f-815a-680034c1efb4",
+    "GUID": "29c0aa70-6d79-44d8-ae8e-dfe6d2a3b253",
     "Files": [
-        "Assets/Game/Mods/LootMenu/Scripts/LootMenuMain.cs",
-        "Assets/Game/Mods/LootMenu/Scripts/LootMenuUI.cs"
+        "Assets/Game/Mods/LootMenu/Scripts/LootMenu.cs",
+        "Assets/Game/Mods/LootMenu/Textures/background.png",
+        "Assets/Game/Mods/LootMenu/LootMenu.dfmod.json",
+        "Assets/Game/Mods/LootMenu/Textures/border.png"
     ]
 }
