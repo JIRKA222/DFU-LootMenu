@@ -221,6 +221,7 @@ namespace LootMenuMod
                 // Debug.Log(selectTexturePos);
                 // Debug.Log(itemDisplayOffset);
 
+                guiStyle.normal.textColor = Color.black;
                 GUI.DrawTexture(new Rect(new Vector2(xPos, Screen.height / 10), backgroundTextureSize), backgroundTexture);
                 GUI.DrawTexture(new Rect(xPos, yPos * (selectTexturePos + 3), xSize, ySize), borderTexture);
 
@@ -234,6 +235,10 @@ namespace LootMenuMod
                         GUI.Label(new Rect(xPos, yPos * (i + 3), xSize, ySize), itemNameList[currentItem], guiStyle);
                     currentItem++;
                 }
+
+                guiStyle.normal.textColor = Color.red;
+                GUI.Label(new Rect((xPos / 4) * 3, yPos * 0, xSize, ySize), "E - Take", guiStyle);
+                GUI.Label(new Rect(xPos, yPos * 0, xSize, ySize), "R - Open", guiStyle);
             }
         }
 
@@ -252,9 +257,8 @@ namespace LootMenuMod
                 
                 DaggerfallUnityItem item;
                 item = loot.Items.GetItem(index);
-                
-                ItemCollection items = new ItemCollection();
-                items.Transfer(item, loot.Items);
+
+                GameManager.Instance.PlayerEntity.Items.Transfer(item, loot.Items);
             }
         }
 
