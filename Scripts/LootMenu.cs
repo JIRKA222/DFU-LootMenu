@@ -7,6 +7,8 @@ using System.Text;
 using DaggerfallWorkshop;
 using DaggerfallWorkshop.Game;
 using DaggerfallWorkshop.Game.Items;
+using DaggerfallWorkshop.Game.UserInterface;
+using DaggerfallWorkshop.Game.UserInterfaceWindows;
 using DaggerfallWorkshop.Game.Utility.ModSupport;
 using DaggerfallWorkshop.Utility;
 using DaggerfallWorkshop.Utility.AssetInjection;
@@ -99,16 +101,12 @@ namespace LootMenuMod
             if (GameManager.Instance.IsPlayerOnHUD)
             {
                 if (InputManager.Instance.GetKeyDown(upKeyCode) || Input.GetAxis("Mouse ScrollWheel") > 0f)
-                {
                     selectedItem -= 1;
-                }
                 if(InputManager.Instance.GetKeyDown(downKeyCode) || Input.GetAxis("Mouse ScrollWheel") < 0f)
-                {
                     selectedItem += 1;
-                }
  
             }
-            if (GameManager.Instance.IsPlayerOnHUD && wait > 2)
+            if (GameManager.Instance.IsPlayerOnHUD)
             {
                 wait = 0;
                 
@@ -120,11 +118,21 @@ namespace LootMenuMod
 
                 if (hitSomething)
                 {
-                    DaggerfallLoot loot;
                     if (hit.distance <= PlayerActivate.CorpseActivationDistance)
                     {      
+                        DaggerfallLoot loot;
                         if (LootCheck(hit, out loot))
                         {
+                            if (InputManager.Instance.GetKeyDown(openKeyCode))
+                            {    
+                                ActivateLootContainer(hit, loot);
+                                UpdateText(loot, out itemNameList, out itemOtherList);
+                            }
+                            if (InputManager.Instance.GetKeyDown(takeKeyCode))
+                            {
+                                TakeItem(loot, selectedItem);
+                                UpdateText(loot, out itemNameList, out itemOtherList);
+                            }
                             if (loot.ContainerType != LootContainerTypes.CorpseMarker && hit.distance > PlayerActivate.TreasureActivationDistance)
                             {
                                 enableLootMenu = false;
@@ -168,50 +176,50 @@ namespace LootMenuMod
 
                 GUI.color = Color.white;
                 GUI.depth = 0;
-                Debug.Log("");
+                // Debug.Log("");
                 if (selectedItem < 0)
                 {
-                    Debug.Log("1");
                     selectedItem = 0;
                     selectTexturePos = 0;
                     itemDisplayOffset = 0;
-                }
-                else if (selectedItem < numOfItemLabels && selectedItem >= itemNameList.Count)
-                {
-                    Debug.Log("2");
-                    selectedItem = itemNameList.Count - 1;
-                    selectTexturePos = itemNameList.Count - 1;
-                    itemDisplayOffset = 0;
+                    // Debug.Log("1");
                 }
                 else if (selectedItem < numOfItemLabels)
                 {
-                    Debug.Log("3");
                     selectTexturePos = selectedItem;
                     itemDisplayOffset = 0;
+                    // Debug.Log("2");
+                }
+                else if (selectedItem < itemNameList.Count - numOfItemLabels)
+                {
+                    selectTexturePos = numOfItemLabels - 1;
+                    itemDisplayOffset = selectedItem - numOfItemLabels + 1;
+                    // Debug.Log("3");
                 }
                 else if (selectedItem >= itemNameList.Count)
                 {
-                    Debug.Log("4");
                     selectedItem = itemNameList.Count - 1;
-                    selectTexturePos = 5;
-                    itemDisplayOffset = selectedItem - itemNameList.Count;
+                    selectTexturePos = numOfItemLabels - 1;
+                    itemDisplayOffset = selectedItem;
+                    // Debug.Log("4");
                 }
                 else
                 {
-                    Debug.Log("5");
-                    selectTexturePos = numOfItemLabels - 1;
+                    selectTexturePos = itemNameList.Count - selectedItem - 1;
                     itemDisplayOffset = selectedItem;
-                }
-
-                if (itemDisplayOffset > itemNameList.Count - numOfItemLabels && itemNameList.Count > numOfItemLabels)
-                {    
-                    itemDisplayOffset = itemNameList.Count - numOfItemLabels;
-                    Debug.Log("5 - 0");
+                    // Debug.Log("5");
                 }
                 
-                Debug.Log(selectedItem);
-                Debug.Log(selectTexturePos);
-                Debug.Log(itemDisplayOffset);
+                if (itemDisplayOffset > itemNameList.Count - numOfItemLabels && itemNameList.Count > numOfItemLabels)
+                {
+                    itemDisplayOffset = selectedItem - numOfItemLabels + 1;
+                    selectTexturePos = 5;
+                    // Debug.Log("5-1");
+                }    
+                
+                // Debug.Log(selectedItem);
+                // Debug.Log(selectTexturePos);
+                // Debug.Log(itemDisplayOffset);
 
                 GUI.DrawTexture(new Rect(new Vector2(xPos, Screen.height / 10), backgroundTextureSize), backgroundTexture);
                 GUI.DrawTexture(new Rect(xPos, yPos * (selectTexturePos + 3), xSize, ySize), borderTexture);
@@ -223,11 +231,7 @@ namespace LootMenuMod
                 for (int i = 0; i < itemNameList.Count; i++)
                 {
                     if (i < numOfItemLabels && currentItem < itemNameList.Count)
-                    {
-                        Debug.Log(itemNameList[currentItem]);
-                        
                         GUI.Label(new Rect(xPos, yPos * (i + 3), xSize, ySize), itemNameList[currentItem], guiStyle);
-                    }
                     currentItem++;
                 }
             }
@@ -238,6 +242,20 @@ namespace LootMenuMod
             loot = hitInfo.transform.GetComponent<DaggerfallLoot>();
 
             return loot != null;
+        }
+
+        private void TakeItem(DaggerfallLoot loot, int index)
+        {
+            if (index < loot.Items.Count)
+            {
+                Debug.Log(index);
+                
+                DaggerfallUnityItem item;
+                item = loot.Items.GetItem(index);
+                
+                ItemCollection items = new ItemCollection();
+                items.Transfer(item, loot.Items);
+            }
         }
 
         private void UpdateText(DaggerfallLoot loot, out List<string> outputItemsNames, out List<string> outputItemsOther)
@@ -263,8 +281,55 @@ namespace LootMenuMod
 
                 item = items.GetItem(i);
                 itemName = itemHelper.ResolveItemLongName(item);
-                if (itemName != "Gold Pieces")
-                    outputItemsNames.Add(itemHelper.ResolveItemLongName(item));
+                // if (itemName != "Gold Pieces")
+                outputItemsNames.Add(itemHelper.ResolveItemLongName(item));
+            }
+        }
+
+        private void ActivateLootContainer(RaycastHit hit, DaggerfallLoot loot)
+        {
+            enableLootMenu = false;
+            
+            // Check if close enough to activate for all types, except for corpses
+            if (loot.ContainerType != LootContainerTypes.CorpseMarker &&
+                hit.distance > PlayerActivate.TreasureActivationDistance)
+            {
+                DaggerfallUI.SetMidScreenText(TextManager.Instance.GetLocalizedText("youAreTooFarAway"));
+                return;
+            }
+            UnityEngine.Random.InitState(Time.frameCount);
+            UserInterfaceManager uiManager = DaggerfallUI.Instance.UserInterfaceManager;
+            if (loot.ContainerType == LootContainerTypes.CorpseMarker)
+            {
+                if (hit.distance > PlayerActivate.CorpseActivationDistance)
+                {
+                    DaggerfallUI.SetMidScreenText(TextManager.Instance.GetLocalizedText("youAreTooFarAway"));
+                    return;
+                }
+                else if (loot.Items.Count == 0)
+                {
+                    DaggerfallUI.AddHUDText(TextManager.Instance.GetLocalizedText("theBodyHasNoTreasure"));
+                    DisableEmptyCorpseContainer(loot.gameObject);
+                    return;
+                }
+                else if (loot.Items.Count == 1 && loot.Items.Contains(ItemGroups.Weapons, (int)Weapons.Arrow))
+                {   // If only one item and it's arrows, then auto-pickup.
+                    GameManager.Instance.PlayerEntity.Items.TransferAll(loot.Items);
+                    DaggerfallUI.AddHUDText(TextManager.Instance.GetLocalizedText("youCollectArrows"));
+                    return;
+                }
+            }
+            DaggerfallUI.Instance.InventoryWindow.LootTarget = loot;
+            DaggerfallUI.PostMessage(DaggerfallUIMessages.dfuiOpenInventoryWindow);
+        }
+
+        private void DisableEmptyCorpseContainer(GameObject go)
+        {
+            if (go)
+            {
+                SphereCollider sphereCollider = go.GetComponent<SphereCollider>();
+                if (sphereCollider)
+                    sphereCollider.enabled = false;
             }
         }
     }
