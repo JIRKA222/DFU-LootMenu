@@ -1,0 +1,7 @@
+ManifestFileVersion: 0
+CRC: 3143509354
+AssetBundleManifest:
+  AssetBundleInfos:
+    Info_0:
+      Name: lootmenu.dfmod
+      Dependencies: {}
