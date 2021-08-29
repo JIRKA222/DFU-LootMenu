@@ -280,7 +280,13 @@ namespace LootMenuMod
                 item = items.GetItem(i);
                 itemName = itemHelper.ResolveItemLongName(item);
                 if (item.IsSummoned || item.ItemGroup == ItemGroups.Transportation)
+                {    
                     ignoredItemAmount += 1;
+                }
+                else if (item.IsAStack())
+                {
+                    outputItemsNames.Add(itemHelper.ResolveItemLongName(item) + " " + item.stackCount.ToString());
+                }
                 else
                 {
                     outputItemsNames.Add(itemHelper.ResolveItemLongName(item));
@@ -297,22 +303,29 @@ namespace LootMenuMod
 
         private string getWeightText(DaggerfallUnityItem item, int index = 0)
         {
-            if (item.weightInKg <= GameManager.Instance.PlayerEntity.MaxEncumbrance - GameManager.Instance.PlayerEntity.CarriedWeight)
-                doesFit = true;
+            if (item.IsAStack())
+            {
+                if (item.weightInKg * item.stackCount <= GameManager.Instance.PlayerEntity.MaxEncumbrance - GameManager.Instance.PlayerEntity.CarriedWeight)
+                    doesFit = true;
+                else
+                    doesFit = false;
+            }
             else
-                doesFit = false;
-            
+            {
+                if (item.weightInKg <= GameManager.Instance.PlayerEntity.MaxEncumbrance - GameManager.Instance.PlayerEntity.CarriedWeight)
+                    doesFit = true;
+                else
+                    doesFit = false;
+            }
             string output = Math.Round(GameManager.Instance.PlayerEntity.CarriedWeight, 1).ToString() + " + " + Math.Round(item.weightInKg, 1).ToString() + " / " + GameManager.Instance.PlayerEntity.MaxEncumbrance.ToString();
             return output;
         }
-
 
         private void ActivateLootContainer(RaycastHit hit, DaggerfallLoot loot)
         {
             enableLootMenu = false;
             
             UnityEngine.Random.InitState(Time.frameCount);
-            
             
             DaggerfallUI.Instance.InventoryWindow.LootTarget = loot;
             DaggerfallUI.PostMessage(DaggerfallUIMessages.dfuiOpenInventoryWindow);
@@ -330,37 +343,71 @@ namespace LootMenuMod
         
         private void DoTransferItemFromIndex(DaggerfallLoot loot, int index)
         {
-            if (index < loot.Items.Count && doesFit)
-            {
+            if (index < loot.Items.Count)
                 DoTransferItem(loot.Items.GetItem(index), loot.Items);
-            }
         }
 
         private void DoTransferItem(DaggerfallUnityItem item, ItemCollection from)
         {
-            // When transferring gold to player simply add to player's gold count
             if (item.ItemGroup == ItemGroups.Transportation)
                 return;
             
-            if (item.IsOfTemplate(ItemGroups.Currency, (int)Currency.Gold_pieces))
+            if (item.IsOfTemplate(ItemGroups.Currency, (int)Currency.Gold_pieces) && doesFit)
             {
                 GameManager.Instance.PlayerEntity.GoldPieces += item.stackCount;
                 from.RemoveItem(item);
                 return;
             }
 
-            if (item.IsOfTemplate(ItemGroups.MiscItems, (int)MiscItems.Map))
+            if (item.IsOfTemplate(ItemGroups.MiscItems, (int)MiscItems.Map) && doesFit)
             {
                 RecordLocationFromMap(item);
                 from.RemoveItem(item);
                 return;
             }
 
-            ItemCollection.AddPosition order = ItemCollection.AddPosition.DontCare;
-            if (item.IsQuestItem)
-                order = ItemCollection.AddPosition.Front;
+            if (!doesFit && item.IsAStack())
+            {
+                DaggerfallUnityItem splitItem = new DaggerfallUnityItem();
+                if (item.IsOfTemplate(ItemGroups.Currency, (int)Currency.Gold_pieces))
+                {
+                    for (int i = item.stackCount - 1; i > 0 ; i--)
+                    {
+                        if (item.weightInKg * i <= GameManager.Instance.PlayerEntity.MaxEncumbrance - GameManager.Instance.PlayerEntity.CarriedWeight)
+                        {
+                            splitItem = from.SplitStack(item, i);
+                            GameManager.Instance.PlayerEntity.GoldPieces += splitItem.stackCount;
 
-            GameManager.Instance.PlayerEntity.Items.Transfer(item, from, order);
+                            from.RemoveItem(splitItem);x
+                        }
+                    }
+                }
+                else
+                {
+                    for (int i = item.stackCount - 1; i > 0 ; i--)
+                    {
+                        if (item.weightInKg * i <= GameManager.Instance.PlayerEntity.MaxEncumbrance - GameManager.Instance.PlayerEntity.CarriedWeight)
+                        {
+                            splitItem = from.SplitStack(item, i);
+                        }
+                    }
+
+                    ItemCollection.AddPosition order = ItemCollection.AddPosition.DontCare;
+                    if (splitItem.IsQuestItem)
+                        order = ItemCollection.AddPosition.Front;
+
+                    GameManager.Instance.PlayerEntity.Items.Transfer(splitItem, from, order);
+                }
+            }
+            else
+            {
+                ItemCollection.AddPosition order = ItemCollection.AddPosition.DontCare;
+                if (item.IsQuestItem)
+                    order = ItemCollection.AddPosition.Front;
+
+                GameManager.Instance.PlayerEntity.Items.Transfer(item, from, order);
+            }
+
         }
 
         void RecordLocationFromMap(DaggerfallUnityItem item)
@@ -381,6 +428,7 @@ namespace LootMenuMod
 
                 DaggerfallMessageBox mapText = new DaggerfallMessageBox(uiManager);
                 mapText.SetTextTokens(DaggerfallUnity.Instance.TextProvider.GetRandomTokens(mapTextId));
+                mapText.ParentPanel.BackgroundColor = Color.clear;
                 mapText.ClickAnywhereToClose = true;
                 mapText.Show();
             }
