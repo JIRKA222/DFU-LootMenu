@@ -31,6 +31,9 @@ namespace LootMenuMod
         private static Mod mod;
         
         Camera mainCamera;
+        DaggerfallFont daggerfallFont0000;
+        DaggerfallFont daggerfallFont0002;
+        DaggerfallFont daggerfallFont0003;
         DaggerfallLoot loot;
         DaggerfallUI daggerfallUI;
         GUIStyle guiStyle;
@@ -44,17 +47,36 @@ namespace LootMenuMod
 
         Texture2D backgroundTexture;
         Texture2D borderTexture;
+
+        Vector2 backgroundTextureSize;
+        Vector2 itemSize;
+        Vector2 titleSize;
+        Vector2 weightSize;
+        Vector2 shadowPosition;
+
+        Color textColor;
+        Color redColor;
+        Color shadowColor;
         
         List<string> itemNameList = new List<string>();
         List<string> itemOtherList = new List<string>();
 
-        bool enableLootMenu;
-
-        const int numOfItemLabels = 6;
-        int playerLayerMask;
-        int ignoredItemAmount = 0;
-        int selectedItem;
         bool doesFit;
+        bool enableLootMenu;
+        const int numOfItemLabels = 6;
+        int ignoredItemAmount = 0;
+        int itemDisplayOffset = 0;
+        int playerLayerMask = 0;
+        int selectTexturePos = 0;
+        int selectedItem = 0;
+        int titleWidth;
+        int weightWidth;
+        int itemWidth;
+        int xPos;
+        int xSize;
+        int yPos;
+        int ySize;
+        int yPosLabel;
 
         float UIScale;
         float uiScaleModifier;
@@ -72,10 +94,13 @@ namespace LootMenuMod
 
         private void Start()
         {
+            daggerfallFont0000 = new DaggerfallFont(DaggerfallFont.FontName.FONT0001);
+            daggerfallFont0002 = new DaggerfallFont(DaggerfallFont.FontName.FONT0002);
+            daggerfallFont0003 = new DaggerfallFont(DaggerfallFont.FontName.FONT0003);
             daggerfallUI = GameObject.Find("DaggerfallUI").GetComponent<DaggerfallUI>();
-            playerLayerMask = ~(1 << LayerMask.NameToLayer("Player"));
-            mainCamera = GameManager.Instance.MainCamera;
             itemHelper = new ItemHelper();
+            mainCamera = GameManager.Instance.MainCamera;
+            playerLayerMask = ~(1 << LayerMask.NameToLayer("Player"));
             uiManager = DaggerfallUI.Instance.UserInterfaceManager;
 
             uiScaleModifier = 4;
@@ -92,15 +117,42 @@ namespace LootMenuMod
             borderTexture= DaggerfallUI.GetTextureFromResources("border");
             borderTexture.filterMode = FilterMode.Point;
 
-            selectedItem = 0;
-
             upKeyCode = KeyCode.UpArrow;
             downKeyCode = KeyCode.DownArrow;
             takeKeyCode = KeyCode.E;
             openKeyCode = KeyCode.R;
+            
+            if (DaggerfallUnity.Settings.SDFFontRendering)
+            {
+                titleSize = new Vector2(6, 6);
+                itemSize = new Vector2(5, 5);
+                weightSize = new Vector2(4, 4);
+            }
+            else
+            {
+                titleSize = new Vector2(5, 5);
+                itemSize = new Vector2(4, 4);
+                weightSize = new Vector2(3, 3);
+            }
+            
+            backgroundTextureSize = new Vector2(Screen.width / 5, Screen.height * 0.8f);
+            shadowPosition = DaggerfallUI.DaggerfallDefaultShadowPos;
+        
+            textColor = DaggerfallUI.DaggerfallDefaultTextColor;
+            redColor = Color.red;
+            shadowColor = DaggerfallUI.DaggerfallDefaultShadowColor;
 
             itemNameList = new List<string>();
             itemOtherList = new List<string>();
+
+            xPos = Screen.width - (Screen.width / 5) - (Screen.width / 100);
+            yPos = Screen.height / 12;      
+            xSize = Screen.width / 5;
+            ySize = Screen.height / 12;
+            yPosLabel = yPos - ((ySize / numOfItemLabels) / 3);
+            titleWidth = 0;
+            weightWidth = 0;
+            itemWidth = 0;
         }
 
         private void Update()
@@ -161,9 +213,7 @@ namespace LootMenuMod
                                     GameObjectHelper.RemoveLootContainer(loot);
                                 }
                                 else
-                                {
                                     enableLootMenu = true;
-                                }
                             }
                         }
                         else
@@ -178,49 +228,8 @@ namespace LootMenuMod
         private void OnGUI()
         {
             if (enableLootMenu && GameManager.Instance.IsPlayerOnHUD)
-            {   
-                Vector2 backgroundTextureSize = new Vector2(Screen.width / 5, Screen.height * 0.8f);
-
-                int selectTexturePos = 0;
-                int itemDisplayOffset = 0;
-                int xPos = Screen.width - (Screen.width / 5);
-                int xSize = Screen.width / 5;
-                int yPos = Screen.height / 10;
-                int ySize = Screen.height / 10;
-
-                if (selectedItem < 0)
-                {
-                    selectedItem = 0;
-                    selectTexturePos = 0;
-                    itemDisplayOffset = 0;
-                }
-                else if (selectedItem >= itemNameList.Count)
-                {
-                    selectedItem = itemNameList.Count - 1;
-                    selectTexturePos = numOfItemLabels - 1;
-                    itemDisplayOffset = selectedItem;
-                }
-                else if (selectedItem < numOfItemLabels)
-                {
-                    selectTexturePos = selectedItem;
-                    itemDisplayOffset = 0;
-                }
-                else if (selectedItem < itemNameList.Count - numOfItemLabels)
-                {
-                    selectTexturePos = numOfItemLabels - 1;
-                    itemDisplayOffset = selectedItem - numOfItemLabels + 1;
-                }
-                else
-                {
-                    selectTexturePos = itemNameList.Count - selectedItem - 1;
-                    itemDisplayOffset = selectedItem;
-                }
-                
-                if (itemDisplayOffset > itemNameList.Count - numOfItemLabels && itemNameList.Count > numOfItemLabels)
-                {
-                    itemDisplayOffset = selectedItem - numOfItemLabels + 1;
-                    selectTexturePos = 5;
-                }
+            {
+                UpdatePositions();
 
                 guiStyle.normal.textColor = Color.black;
                 GUI.depth = 0;
@@ -228,26 +237,77 @@ namespace LootMenuMod
                 itemOtherList[1] = getWeightText(loot.Items.GetItem(selectedItem), selectedItem);
 
                 GUI.DrawTexture(new Rect(new Vector2(xPos, Screen.height / 10), backgroundTextureSize), backgroundTexture);
-                GUI.DrawTexture(new Rect(xPos, yPos * (selectTexturePos + 3), xSize, ySize), borderTexture);
+
+                titleWidth = (int)daggerfallFont0000.CalculateTextWidth(itemOtherList[0], titleSize);
+                weightWidth = (int)daggerfallFont0003.CalculateTextWidth(itemOtherList[1], weightSize);
+
+                float shadowPosModifier = 0;
+                if (DaggerfallUnity.Settings.SDFFontRendering)
+                {
+                    shadowPosModifier = 3f;
+                    daggerfallFont0000.DrawText(itemOtherList[0], new Vector2(xPos + ((xSize - titleWidth * titleSize[0]) / 2), yPosLabel * 2.25f), titleSize, textColor, shadowColor, shadowPosition * titleSize / shadowPosModifier);
+                }
+                else
+                {    
+                    shadowPosModifier = 1;
+                    daggerfallFont0000.DrawText(itemOtherList[0], new Vector2(xPos + ((xSize - titleWidth * titleSize[0]) / 2), yPosLabel * 2.4f), titleSize, textColor, shadowColor, shadowPosition * titleSize / shadowPosModifier);
+                }
+
+                if (doesFit)
+                    daggerfallFont0003.DrawText(itemOtherList[1], new Vector2(xPos + ((xSize - weightWidth * weightSize[0]) / 2), yPosLabel * (numOfItemLabels + 3.75f) + yPosLabel / 4), weightSize, textColor, shadowColor, shadowPosition * weightSize / shadowPosModifier);
+                else
+                    daggerfallFont0003.DrawText(itemOtherList[1], new Vector2(xPos + ((xSize - weightWidth * weightSize[0]) / 2), yPosLabel * (numOfItemLabels + 3.75f) + yPosLabel / 4), weightSize, textColor, shadowColor, shadowPosition * weightSize / shadowPosModifier);
 
                 int currentItem = itemDisplayOffset;
                 for (int i = 0; i < itemNameList.Count; i++)
                 {
                     if (i < numOfItemLabels && currentItem < itemNameList.Count)
-                        GUI.Label(new Rect(xPos, yPos * (i + 3), xSize, ySize), itemNameList[currentItem], guiStyle);
+                    {
+                        itemWidth = (int)daggerfallFont0003.CalculateTextWidth(itemNameList[currentItem], itemSize);
+                        if (i == selectTexturePos)
+                            daggerfallFont0003.DrawText(itemNameList[currentItem], new Vector2(xPos + ((xSize - itemWidth * itemSize[0]) / 2), yPosLabel * (i + 3.5f) + yPosLabel / 2), itemSize, redColor, shadowColor, shadowPosition * itemSize / shadowPosModifier);
+                        else
+                           daggerfallFont0003.DrawText(itemNameList[currentItem], new Vector2(xPos + ((xSize - itemWidth * itemSize[0]) / 2), (yPosLabel * (i + 3.5f)) + yPosLabel / 2), itemSize, textColor, shadowColor, shadowPosition * itemSize / shadowPosModifier);
+                    }
                     currentItem++;
                 }
+            }
+        }
 
-                GUI.Label(new Rect(xPos, yPos * 1, xSize, ySize), itemOtherList[0], guiStyle);
-
-                if (!doesFit)
-                    guiStyle.normal.textColor = Color.red;
-
-                GUI.Label(new Rect(xPos, yPos * 2, xSize, ySize), itemOtherList[1], guiStyle);
-
-                guiStyle.normal.textColor = Color.red;
-                GUI.Label(new Rect((xPos / 4) * 3, yPos * 0, xSize, ySize), "E - Take", guiStyle);
-                GUI.Label(new Rect(xPos, yPos * 0, xSize, ySize), "R - Open", guiStyle);
+        void UpdatePositions()
+        {
+            if (selectedItem < 0)
+            {
+                selectedItem = 0;
+                selectTexturePos = 0;
+                itemDisplayOffset = 0;
+            }
+            else if (selectedItem >= itemNameList.Count)
+            {
+                selectedItem = itemNameList.Count - 1;
+                selectTexturePos = numOfItemLabels - 1;
+                itemDisplayOffset = selectedItem;
+            }
+            else if (selectedItem < numOfItemLabels)
+            {
+                selectTexturePos = selectedItem;
+                itemDisplayOffset = 0;
+            }
+            else if (selectedItem < itemNameList.Count - numOfItemLabels)
+            {
+                selectTexturePos = numOfItemLabels - 1;
+                itemDisplayOffset = selectedItem - numOfItemLabels + 1;
+            }
+            else
+            {
+                selectTexturePos = itemNameList.Count - selectedItem - 1;
+                itemDisplayOffset = selectedItem;
+            }
+                
+            if (itemDisplayOffset > itemNameList.Count - numOfItemLabels && itemNameList.Count > numOfItemLabels)
+            {
+                itemDisplayOffset = selectedItem - numOfItemLabels + 1;
+                selectTexturePos = numOfItemLabels - 1;
             }
         }
 
@@ -279,18 +339,13 @@ namespace LootMenuMod
 
                 item = items.GetItem(i);
                 itemName = itemHelper.ResolveItemLongName(item);
+                
                 if (item.IsSummoned || item.ItemGroup == ItemGroups.Transportation)
-                {    
                     ignoredItemAmount += 1;
-                }
                 else if (item.IsAStack())
-                {
                     outputItemsNames.Add(itemHelper.ResolveItemLongName(item) + " " + item.stackCount.ToString());
-                }
                 else
-                {
                     outputItemsNames.Add(itemHelper.ResolveItemLongName(item));
-                }
             }
 
             if(String.IsNullOrEmpty(loot.entityName))
@@ -376,9 +431,9 @@ namespace LootMenuMod
                         if (item.weightInKg * i <= GameManager.Instance.PlayerEntity.MaxEncumbrance - GameManager.Instance.PlayerEntity.CarriedWeight)
                         {
                             splitItem = from.SplitStack(item, i);
+                            
                             GameManager.Instance.PlayerEntity.GoldPieces += splitItem.stackCount;
-
-                            from.RemoveItem(splitItem);x
+                            from.RemoveItem(splitItem);
                         }
                     }
                 }
@@ -387,9 +442,7 @@ namespace LootMenuMod
                     for (int i = item.stackCount - 1; i > 0 ; i--)
                     {
                         if (item.weightInKg * i <= GameManager.Instance.PlayerEntity.MaxEncumbrance - GameManager.Instance.PlayerEntity.CarriedWeight)
-                        {
                             splitItem = from.SplitStack(item, i);
-                        }
                     }
 
                     ItemCollection.AddPosition order = ItemCollection.AddPosition.DontCare;
@@ -397,9 +450,10 @@ namespace LootMenuMod
                         order = ItemCollection.AddPosition.Front;
 
                     GameManager.Instance.PlayerEntity.Items.Transfer(splitItem, from, order);
+                    from.RemoveItem(splitItem);
                 }
             }
-            else
+            else if (doesFit)
             {
                 ItemCollection.AddPosition order = ItemCollection.AddPosition.DontCare;
                 if (item.IsQuestItem)
