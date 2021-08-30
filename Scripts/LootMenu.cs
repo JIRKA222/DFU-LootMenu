@@ -70,6 +70,7 @@ namespace LootMenuMod
         int selectTexturePos = 0;
         int selectedItem = 0;
         int titleWidth;
+        int yPosOffset;
         int weightWidth;
         int itemWidth;
         int xPos;
@@ -106,9 +107,6 @@ namespace LootMenuMod
             uiScaleModifier = 4;
 
             guiStyle = new GUIStyle();
-            UIScale = daggerfallUI.DaggerfallHUD.HUDVitals.Scale.x * uiScaleModifier;
-            guiStyle.alignment = TextAnchor.MiddleCenter;
-            guiStyle.fontSize = (int)(10.0f * UIScale);
 
             enableLootMenu = false;
 
@@ -121,18 +119,18 @@ namespace LootMenuMod
             downKeyCode = KeyCode.DownArrow;
             takeKeyCode = KeyCode.E;
             openKeyCode = KeyCode.R;
+
+            UpdateCoordinates();
             
-            if (DaggerfallUnity.Settings.SDFFontRendering)
+            titleSize = new Vector2(xSize / (numOfItemLabels * 10), xSize / (numOfItemLabels * 10));
+            itemSize = new Vector2(xSize / (numOfItemLabels * 12), xSize / (numOfItemLabels * 12));
+            weightSize = new Vector2(xSize / (numOfItemLabels * 14), xSize / (numOfItemLabels * 14));
+
+            if (!DaggerfallUnity.Settings.SDFFontRendering)
             {
-                titleSize = new Vector2(6, 6);
-                itemSize = new Vector2(5, 5);
-                weightSize = new Vector2(4, 4);
-            }
-            else
-            {
-                titleSize = new Vector2(5, 5);
-                itemSize = new Vector2(4, 4);
-                weightSize = new Vector2(3, 3);
+                titleSize = titleSize * 0.9f;
+                itemSize = itemSize * 0.8f;
+                weightSize = weightSize * 0.8f;
             }
             
             backgroundTextureSize = new Vector2(Screen.width / 5, Screen.height * 0.8f);
@@ -145,11 +143,6 @@ namespace LootMenuMod
             itemNameList = new List<string>();
             itemOtherList = new List<string>();
 
-            xPos = Screen.width - (Screen.width / 5) - (Screen.width / 100);
-            yPos = Screen.height / 12;      
-            xSize = Screen.width / 5;
-            ySize = Screen.height / 12;
-            yPosLabel = yPos - ((ySize / numOfItemLabels) / 3);
             titleWidth = 0;
             weightWidth = 0;
             itemWidth = 0;
@@ -236,27 +229,27 @@ namespace LootMenuMod
 
                 itemOtherList[1] = getWeightText(loot.Items.GetItem(selectedItem), selectedItem);
 
-                GUI.DrawTexture(new Rect(new Vector2(xPos, Screen.height / 10), backgroundTextureSize), backgroundTexture);
-
                 titleWidth = (int)daggerfallFont0000.CalculateTextWidth(itemOtherList[0], titleSize);
                 weightWidth = (int)daggerfallFont0003.CalculateTextWidth(itemOtherList[1], weightSize);
+
+                GUI.DrawTexture(new Rect(new Vector2(xPos, yPos + yPosOffset), backgroundTextureSize), backgroundTexture);
 
                 float shadowPosModifier = 0;
                 if (DaggerfallUnity.Settings.SDFFontRendering)
                 {
                     shadowPosModifier = 3f;
-                    daggerfallFont0000.DrawText(itemOtherList[0], new Vector2(xPos + ((xSize - titleWidth * titleSize[0]) / 2), yPosLabel * 2.25f), titleSize, textColor, shadowColor, shadowPosition * titleSize / shadowPosModifier);
+                    daggerfallFont0000.DrawText(itemOtherList[0], new Vector2(xPos + ((xSize - titleWidth * titleSize[0]) / 2), (yPosLabel * 2f) + yPosOffset), titleSize, textColor, shadowColor, shadowPosition * titleSize / shadowPosModifier);
                 }
                 else
-                {    
+                {
                     shadowPosModifier = 1;
-                    daggerfallFont0000.DrawText(itemOtherList[0], new Vector2(xPos + ((xSize - titleWidth * titleSize[0]) / 2), yPosLabel * 2.4f), titleSize, textColor, shadowColor, shadowPosition * titleSize / shadowPosModifier);
+                    daggerfallFont0000.DrawText(itemOtherList[0], new Vector2(xPos + ((xSize - titleWidth * titleSize[0]) / 2), (yPosLabel * 2.15f) + yPosOffset), titleSize, textColor, shadowColor, shadowPosition * titleSize / shadowPosModifier);
                 }
 
                 if (doesFit)
-                    daggerfallFont0003.DrawText(itemOtherList[1], new Vector2(xPos + ((xSize - weightWidth * weightSize[0]) / 2), yPosLabel * (numOfItemLabels + 3.75f) + yPosLabel / 4), weightSize, textColor, shadowColor, shadowPosition * weightSize / shadowPosModifier);
+                    daggerfallFont0003.DrawText(itemOtherList[1], new Vector2(xPos + ((xSize - weightWidth * weightSize[0]) / 2), (yPosLabel * (numOfItemLabels + 3.45f) + yPosLabel / 4) + yPosOffset), weightSize, textColor, shadowColor, shadowPosition * weightSize / shadowPosModifier);
                 else
-                    daggerfallFont0003.DrawText(itemOtherList[1], new Vector2(xPos + ((xSize - weightWidth * weightSize[0]) / 2), yPosLabel * (numOfItemLabels + 3.75f) + yPosLabel / 4), weightSize, textColor, shadowColor, shadowPosition * weightSize / shadowPosModifier);
+                    daggerfallFont0003.DrawText(itemOtherList[1], new Vector2(xPos + ((xSize - weightWidth * weightSize[0]) / 2), (yPosLabel * (numOfItemLabels + 3.45f) + yPosLabel / 4) + yPosOffset), weightSize, textColor, shadowColor, shadowPosition * weightSize / shadowPosModifier);
 
                 int currentItem = itemDisplayOffset;
                 for (int i = 0; i < itemNameList.Count; i++)
@@ -265,16 +258,26 @@ namespace LootMenuMod
                     {
                         itemWidth = (int)daggerfallFont0003.CalculateTextWidth(itemNameList[currentItem], itemSize);
                         if (i == selectTexturePos)
-                            daggerfallFont0003.DrawText(itemNameList[currentItem], new Vector2(xPos + ((xSize - itemWidth * itemSize[0]) / 2), yPosLabel * (i + 3.5f) + yPosLabel / 2), itemSize, redColor, shadowColor, shadowPosition * itemSize / shadowPosModifier);
+                            daggerfallFont0003.DrawText(itemNameList[currentItem], new Vector2(xPos + ((xSize - itemWidth * itemSize[0]) / 2), (yPosLabel * (i + 3.25f) + yPosLabel / 2) + yPosOffset), itemSize, redColor, shadowColor, shadowPosition * itemSize / shadowPosModifier);
                         else
-                           daggerfallFont0003.DrawText(itemNameList[currentItem], new Vector2(xPos + ((xSize - itemWidth * itemSize[0]) / 2), (yPosLabel * (i + 3.5f)) + yPosLabel / 2), itemSize, textColor, shadowColor, shadowPosition * itemSize / shadowPosModifier);
+                           daggerfallFont0003.DrawText(itemNameList[currentItem], new Vector2(xPos + ((xSize - itemWidth * itemSize[0]) / 2), ((yPosLabel * (i + 3.25f)) + yPosLabel / 2) + yPosOffset), itemSize, textColor, shadowColor, shadowPosition * itemSize / shadowPosModifier);
                     }
                     currentItem++;
                 }
             }
         }
 
-        void UpdatePositions()
+        private void UpdateCoordinates()
+        {
+            xPos = Screen.width - (Screen.width / 5) - (Screen.width / 100);
+            yPos = Screen.height / 12;
+            yPosOffset = Screen.height / -24;
+            xSize = Screen.width / 5;
+            ySize = Screen.height / 12;
+            yPosLabel = yPos - ((ySize / numOfItemLabels) / 3);
+        }
+
+        private void UpdatePositions()
         {
             if (selectedItem < 0)
             {
