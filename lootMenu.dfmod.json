@@ -2,11 +2,13 @@
     "ModTitle": "LootMenu",
     "ModVersion": "0.0.1",
     "ModAuthor": "Shapur",
+    "DFUnity_Version": "0.12.2",
     "GUID": "29c0aa70-6d79-44d8-ae8e-dfe6d2a3b253",
     "Files": [
         "Assets/Game/Mods/LootMenu/Scripts/LootMenu.cs",
         "Assets/Game/Mods/LootMenu/Textures/background.png",
         "Assets/Game/Mods/LootMenu/LootMenu.dfmod.json",
-        "Assets/Game/Mods/LootMenu/Textures/border.png"
+        "Assets/Game/Mods/LootMenu/Textures/border.png",
+        "Assets/Game/Mods/LootMenu/modsettings.json"
     ]
 }

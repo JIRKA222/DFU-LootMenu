@@ -1,0 +1,80 @@
+{
+    "Version": null,
+    "Sections": [
+        {
+            "Name": "Layout",
+            "Description": "Configure the LootMenu layout.",
+            "IsAdvanced": false,
+            "Keys": [
+                {
+                    "Min": 2,
+                    "Max": 10,
+                    "Value": 6,
+                    "Name": "NumberOfItemsShown",
+                    "Description": null,
+                    "$version": "v1",
+                    "$type": "DaggerfallWorkshop.Game.Utility.ModSupport.ModSettings.SliderIntKey"
+                },
+                {
+                    "Min": 10,
+                    "Max": 200,
+                    "Value": 100,
+                    "Name": "HorizontalScale",
+                    "Description": null,
+                    "$version": "v1",
+                    "$type": "DaggerfallWorkshop.Game.Utility.ModSupport.ModSettings.SliderIntKey"
+                },
+                {
+                    "Min": 10,
+                    "Max": 200,
+                    "Value": 100,
+                    "Name": "VerticalScale",
+                    "Description": null,
+                    "$version": "v1",
+                    "$type": "DaggerfallWorkshop.Game.Utility.ModSupport.ModSettings.SliderIntKey"
+                },
+                {
+                    "Min": 0,
+                    "Max": 100,
+                    "Value": 99,
+                    "Name": "HorizontalPosition",
+                    "Description": null,
+                    "$version": "v1",
+                    "$type": "DaggerfallWorkshop.Game.Utility.ModSupport.ModSettings.SliderIntKey"
+                },
+                {
+                    "Min": 0,
+                    "Max": 100,
+                    "Value": 5,
+                    "Name": "VerticalPosition",
+                    "Description": null,
+                    "$version": "v1",
+                    "$type": "DaggerfallWorkshop.Game.Utility.ModSupport.ModSettings.SliderIntKey"
+                }
+            ],
+            "$version": "v1"
+        },
+        {
+            "Name": "Controls",
+            "Description": "Customize controls.",
+            "IsAdvanced": false,
+            "Keys": [
+                {
+                    "Value": "E",
+                    "Name": "TakeKeyCode",
+                    "Description": "Select a hotkey. Insert one Unity KeyCode.",
+                    "$version": "v1",
+                    "$type": "DaggerfallWorkshop.Game.Utility.ModSupport.ModSettings.TextKey"
+                },
+                {
+                    "Value": "R",
+                    "Name": "OpenKeyCode",
+                    "Description": "Select a hotkey. Insert one Unity KeyCode.",
+                    "$version": "v1",
+                    "$type": "DaggerfallWorkshop.Game.Utility.ModSupport.ModSettings.TextKey"
+                }
+            ],
+            "$version": "v1"
+        }
+    ]
+}
