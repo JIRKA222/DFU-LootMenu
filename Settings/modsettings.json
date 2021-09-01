@@ -7,8 +7,8 @@
             "IsAdvanced": false,
             "Keys": [
                 {
-                    "Min": 2,
-                    "Max": 10,
+                    "Min": 4,
+                    "Max": 12,
                     "Value": 6,
                     "Name": "NumberOfItemsShown",
                     "Description": null,
