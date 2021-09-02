@@ -55,6 +55,41 @@
             "$version": "v1"
         },
         {
+            "Name": "FontSizes",
+            "Description": "Change font sizes.",
+            "IsAdvanced": false,
+            "Keys": [
+                {
+                    "Min": 10,
+                    "Max": 200,
+                    "Value": 100,
+                    "Name": "TitleFontSize",
+                    "Description": null,
+                    "$version": "v1",
+                    "$type": "DaggerfallWorkshop.Game.Utility.ModSupport.ModSettings.SliderIntKey"
+                },
+                {
+                    "Min": 10,
+                    "Max": 200,
+                    "Value": 100,
+                    "Name": "ItemFontSize",
+                    "Description": null,
+                    "$version": "v1",
+                    "$type": "DaggerfallWorkshop.Game.Utility.ModSupport.ModSettings.SliderIntKey"
+                },
+                {
+                    "Min": 10,
+                    "Max": 200,
+                    "Value": 100,
+                    "Name": "WeightFontSize",
+                    "Description": null,
+                    "$version": "v1",
+                    "$type": "DaggerfallWorkshop.Game.Utility.ModSupport.ModSettings.SliderIntKey"
+                }
+            ],
+            "$version": "v1"
+        },
+        {
             "Name": "Controls",
             "Description": "Customize controls.",
             "IsAdvanced": false,

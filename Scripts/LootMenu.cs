@@ -37,7 +37,7 @@ namespace LootMenuMod
         DaggerfallUnityItem item;
         ItemHelper itemHelper;
         
-        DaggerfallFont daggerfallFont0000;
+        DaggerfallFont daggerfallFont0001;
         DaggerfallFont daggerfallFont0003;
         DaggerfallUI daggerfallUI;
         UserInterfaceManager uiManager;
@@ -83,10 +83,15 @@ namespace LootMenuMod
         static bool updatedSettings;
 
         static int numberOfItemsShown;
+
         static float horizontalScale;
         static float verticalScale;
-        static float horizontalPosition;
-        static float verticalPosition;
+        static float titleFontSizeScale;
+        static float itemFontSizeScale;
+        static float weightFontSizeScale;
+
+        static float horizontalPositionModifier;
+        static float verticalPositionModifier;
 
         int itemDisplayOffset;
         int playerLayerMask;
@@ -108,7 +113,7 @@ namespace LootMenuMod
 
         private void Start()
         {
-            daggerfallFont0000 = new DaggerfallFont(DaggerfallFont.FontName.FONT0001);
+            daggerfallFont0001 = new DaggerfallFont(DaggerfallFont.FontName.FONT0001);
             daggerfallFont0003 = new DaggerfallFont(DaggerfallFont.FontName.FONT0003);
 
             daggerfallUI = GameObject.Find("DaggerfallUI").GetComponent<DaggerfallUI>();
@@ -216,15 +221,15 @@ namespace LootMenuMod
                 
                 int currentItem;
                 int itemWidth;
-                int titleWidth = (int)daggerfallFont0000.CalculateTextWidth(itemOtherList[0], titleFontSize);
+                int titleWidth = (int)daggerfallFont0001.CalculateTextWidth(itemOtherList[0], titleFontSize);
                 int weightWidth = (int)daggerfallFont0003.CalculateTextWidth(itemOtherList[1], weightFontSize);
 
-                titlePos = new Vector2(backgroundUseablePos[0] + (titleSize[0] - titleWidth * titleFontSize[0]) / 2, backgroundUseablePos[1] + (titleSize[1] - daggerfallFont0003.GlyphHeight * titleFontSize[1]) / 12);
+
+                titlePos = new Vector2(backgroundUseablePos[0] + (titleSize[0] - titleWidth * titleFontSize[0]) / 2, backgroundUseablePos[1]);
                 itemPos = new Vector2();
-                weightPos = new Vector2(backgroundUseablePos[0] + (titleSize[0] - weightWidth * weightFontSize[0]) / 2, backgroundUseablePos[1] + backgroundUseableSize[1] - titleSize[1] + (titleSize[1] - daggerfallFont0003.GlyphHeight * weightFontSize[1]) / 2);
+                weightPos = new Vector2(backgroundUseablePos[0] + (titleSize[0] - weightWidth * weightFontSize[0]) / 2, backgroundUseablePos[1] + backgroundUseableSize[1] - (daggerfallFont0003.GlyphHeight * weightFontSize[1]) * 1.5f);
 
                 UpdatePositions();
-                Debug.Log(selectedItem);
                 itemOtherList[1] = getWeightText(loot.Items.GetItem(selectedItem), selectedItem);
                 
                 GUI.DrawTexture(new Rect(backgroundPos, backgroundSize), backgroundTexture);
@@ -234,7 +239,7 @@ namespace LootMenuMod
                 else
                     shadowPosModifier = 1;
 
-                daggerfallFont0000.DrawText(itemOtherList[0], titlePos, titleFontSize, textColor, shadowColor, shadowPosition * titleFontSize / shadowPosModifier);
+                daggerfallFont0001.DrawText(itemOtherList[0], titlePos, titleFontSize, textColor, shadowColor, shadowPosition * titleFontSize / shadowPosModifier);
 
                 if (doesFit || (item.IsAStack() && freeWeight > item.weightInKg))
                     daggerfallFont0003.DrawText(itemOtherList[1], weightPos, weightFontSize, textColor, shadowColor, shadowPosition * weightFontSize / shadowPosModifier);
@@ -250,8 +255,8 @@ namespace LootMenuMod
 
                         itemWidth = (int)daggerfallFont0003.CalculateTextWidth(itemNameList[currentItem], itemFontSize);
 
-                        // if (itemWidth * itemFontSize[0] > itemSize[0])
-                        //     newItemFontSize = new Vector2(itemSize[0] / (itemWidth * 0.8f), itemSize[0] / (itemWidth * 0.8f));
+                        if (itemWidth * itemFontSize[0] > itemSize[0])
+                            newItemFontSize = new Vector2(itemSize[0] / itemWidth, itemSize[0] / itemWidth);
 
                         itemPos = new Vector2(backgroundUseablePos[0] + (itemSize[0] - itemWidth * newItemFontSize[0]) / 2, backgroundUseablePos[1] + titleSize[1] + itemSize[1] * i + (itemSize[1] - daggerfallFont0003.GlyphHeight * itemFontSize[1]) / 2);
 
@@ -267,19 +272,18 @@ namespace LootMenuMod
 
         private void UpdateLayout()
         {
-            Debug.Log("here");
             backgroundSize = new Vector2((Screen.width * 0.2f) * horizontalScale, (Screen.height * 0.8f) * verticalScale);
             backgroundUseableSize = new Vector2(backgroundSize[0] * 0.875f, backgroundSize[1] * 0.777777f);
             titleSize = new Vector2(backgroundUseableSize[0], backgroundSize[1] * 0.12857142f);
             ignoredSize = new Vector2(backgroundUseableSize[0], backgroundUseableSize[1] * 0.01428571f);
             itemSize = new Vector2(backgroundUseableSize[0], (backgroundUseableSize[1] - ignoredSize[1] * 2 - titleSize[1] * 2) / numberOfItemsShown);
 
-            backgroundPos = new Vector2((Screen.width - backgroundSize[0]) * horizontalPosition, (Screen.height - backgroundSize[1]) * verticalPosition);
+            backgroundPos = new Vector2((Screen.width - backgroundSize[0]) * horizontalPositionModifier, (Screen.height - backgroundSize[1]) * verticalPositionModifier);
             backgroundUseablePos = new Vector2(backgroundPos[0] + (backgroundSize[0] - backgroundUseableSize[0]) / 2, backgroundPos[1] + (backgroundSize[1] - backgroundUseableSize[1]) / 2);
 
-            titleFontSize = new Vector2(titleSize[1] / 20, titleSize[1] / 20);
-            itemFontSize = new Vector2(itemSize[0] / (numberOfItemsShown * 12), itemSize[0] / (numberOfItemsShown * 12));
-            weightFontSize = new Vector2(titleSize[1] / 24, titleSize[1] / 24);
+            titleFontSize = new Vector2((titleSize[1] / 20) * titleFontSizeScale, (titleSize[1] / 20) * titleFontSizeScale);
+            itemFontSize = new Vector2((itemSize[0] / (numberOfItemsShown * 12) * itemFontSizeScale), (itemSize[0] / (numberOfItemsShown * 12)) * itemFontSizeScale);
+            weightFontSize = new Vector2((titleSize[1] / 24) * weightFontSizeScale, (titleSize[1] / 24) * weightFontSizeScale);
 
             if (!DaggerfallUnity.Settings.SDFFontRendering)
             {
@@ -309,6 +313,16 @@ namespace LootMenuMod
 
         static void LoadSettings(ModSettings modSettings, ModSettingsChange change)
         {
+            numberOfItemsShown = modSettings.GetValue<int>("Layout", "NumberOfItemsShown");
+            horizontalScale = (float)modSettings.GetValue<int>("Layout", "HorizontalScale") / 100;
+            verticalScale = (float)modSettings.GetValue<int>("Layout", "VerticalScale") / 100;
+            horizontalPositionModifier = (float)modSettings.GetValue<int>("Layout", "HorizontalPosition") / 100;
+            verticalPositionModifier = (float)modSettings.GetValue<int>("Layout", "VerticalPosition") / 100;
+
+            titleFontSizeScale = (float)modSettings.GetValue<int>("FontSizes", "TitleFontSize") / 100;
+            itemFontSizeScale = (float)modSettings.GetValue<int>("FontSizes", "ItemFontSize") / 100;
+            weightFontSizeScale = (float)modSettings.GetValue<int>("FontSizes", "WeightFontSize") / 100;
+
             if(!SetKeyFromText(modSettings.GetValue<string>("Controls", "TakeKeyCode"), out takeKeyCode))
                 takeKeyCode = KeyCode.E;
 
@@ -317,13 +331,6 @@ namespace LootMenuMod
 
             upKeyCode = KeyCode.UpArrow;
             downKeyCode = KeyCode.DownArrow;
-
-            numberOfItemsShown = modSettings.GetValue<int>("Layout", "NumberOfItemsShown");
-
-            horizontalScale = (float)modSettings.GetValue<int>("Layout", "HorizontalScale") / 100;
-            verticalScale = (float)modSettings.GetValue<int>("Layout", "VerticalScale") / 100;
-            horizontalPosition = (float)modSettings.GetValue<int>("Layout", "HorizontalPosition") / 100;
-            verticalPosition = (float)modSettings.GetValue<int>("Layout", "VerticalPosition") / 100;
 
             updatedSettings = true;
         }
