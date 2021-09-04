@@ -123,7 +123,7 @@ namespace LootMenuMod
             
             enableLootMenu = false;
 
-            if(!TextureReplacement.TryImportTextureFromLooseFiles("lootMenuBackground", false, false, true, out backgroundTexture))
+            if(!TextureReplacement.TryImportTextureFromLooseFiles("LootMenu/lootMenuBackground", false, false, true, out backgroundTexture))
                 throw new Exception("LootMenu: Could not load lootMenuBackground texture.");
             backgroundTexture.filterMode = FilterMode.Point;
 
@@ -317,7 +317,7 @@ namespace LootMenuMod
 
         Vector2 GetWeightTextPos(int weightWidth, Vector2 fontSize)
         {
-            Vector2 output = new Vector2(backgroundUseablePos[0] + (titleSize[0] - weightWidth * fontSize[0]) / 2, backgroundUseablePos[1] + backgroundUseableSize[1] + (titleSize[1] - (daggerfallFont0003.GlyphHeight * fontSize[1]) * 1.5f) / 2);
+            Vector2 output = new Vector2(backgroundUseablePos[0] + (titleSize[0] - weightWidth * fontSize[0]) / 2, backgroundUseablePos[1] + backgroundUseableSize[1] - (daggerfallFont0003.GlyphHeight * fontSize[1]));
 
             return output;
         }
