@@ -1,9 +1,9 @@
 ManifestFileVersion: 0
-CRC: 2860592708
+CRC: 3540589844
 Hashes:
   AssetFileHash:
     serializedVersion: 2
-    Hash: d6d9c9ac8e3e8ecab583eb78e432da83
+    Hash: fffa790fd5b285d1273d5e75a1741ecf
   TypeTreeHash:
     serializedVersion: 2
     Hash: 5ad585dd02dfb5016c0dad519eab8f49
@@ -14,7 +14,7 @@ ClassTypes:
 SerializeReferenceClassIdentifiers: []
 Assets:
 - Assets/Game/Mods/LootMenu/Settings/modsettings.json
-- Assets/Untracked/ModBuilder/LootMenu/LootMenu.cs.txt
 - Assets/Game/Mods/LootMenu/LootMenu.dfmod.json
+- Assets/Untracked/ModBuilder/LootMenu/LootMenu.cs.txt
 - Assets/Game/Mods/LootMenu/Settings/modpresets.json
 Dependencies: []
