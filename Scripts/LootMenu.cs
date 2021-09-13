@@ -21,12 +21,6 @@ using UnityEngine;
 
 namespace LootMenuMod
 {
-    public class ContainerLootSpawnedEventArgs : System.EventArgs
-    {
-        public LootContainerTypes ContainerType;
-        public ItemCollection Loot;
-    }
-    
     public class LootMenu : MonoBehaviour
     {
         private static Mod mod;
@@ -77,6 +71,7 @@ namespace LootMenuMod
 
         bool doesFit;
         bool enableLootMenu;
+
         static bool updatedSettings;
 
         static int numberOfItemsShown;
@@ -86,6 +81,11 @@ namespace LootMenuMod
         static float titleFontSizeScale;
         static float itemFontSizeScale;
         static float weightFontSizeScale;
+
+        static int decimalSeparator;
+        static int titlePosYOffset;
+        static int itemPosYOffset;
+        static int weightPosYOffset;
 
         static float horizontalPositionModifier;
         static float verticalPositionModifier;
@@ -284,7 +284,7 @@ namespace LootMenuMod
 
         Vector2 GetTitleTextPos(int titleWidth, Vector2 fontSize)
         {
-            Vector2 output = new Vector2(backgroundUseablePos[0] + (titleSize[0] - titleWidth * fontSize[0]) / 2, backgroundUseablePos[1] + (titleSize[1] - (daggerfallFont0001.GlyphHeight * fontSize[1]) * 1.5f) / 2);
+            Vector2 output = new Vector2(backgroundUseablePos[0] + (titleSize[0] - titleWidth * fontSize[0]) / 2, backgroundUseablePos[1] + (titleSize[1] - (daggerfallFont0001.GlyphHeight * fontSize[1]) * 1.5f) / 2 + titlePosYOffset);
 
             return output;
         }
@@ -301,7 +301,7 @@ namespace LootMenuMod
 
         Vector2 GetItemTextPoS(int itemWidth, int index, Vector2 fontSize)
         {
-            Vector2 output = new Vector2(backgroundUseablePos[0] + (itemSize[0] - itemWidth * fontSize[0]) / 2, backgroundUseablePos[1] + titleSize[1] + itemSize[1] * index + (itemSize[1] - daggerfallFont0003.GlyphHeight * fontSize[1]) / 2);
+            Vector2 output = new Vector2(backgroundUseablePos[0] + (itemSize[0] - itemWidth * fontSize[0]) / 2, backgroundUseablePos[1] + titleSize[1] + itemSize[1] * index + (itemSize[1] - daggerfallFont0003.GlyphHeight * fontSize[1]) / 2 + itemPosYOffset);
             return output;
         }
 
@@ -317,7 +317,7 @@ namespace LootMenuMod
 
         Vector2 GetWeightTextPos(int weightWidth, Vector2 fontSize)
         {
-            Vector2 output = new Vector2(backgroundUseablePos[0] + (titleSize[0] - weightWidth * fontSize[0]) / 2, backgroundUseablePos[1] + backgroundUseableSize[1] - (daggerfallFont0003.GlyphHeight * fontSize[1]));
+            Vector2 output = new Vector2(backgroundUseablePos[0] + (titleSize[0] - weightWidth * fontSize[0]) / 2, backgroundUseablePos[1] + backgroundUseableSize[1] - (daggerfallFont0003.GlyphHeight * fontSize[1]) + weightPosYOffset);
 
             return output;
         }
@@ -367,14 +367,19 @@ namespace LootMenuMod
         static void LoadSettings(ModSettings modSettings, ModSettingsChange change)
         {
             numberOfItemsShown = modSettings.GetValue<int>("Layout", "NumberOfItemsShown");
+            decimalSeparator = modSettings.GetValue<int>("Text", "DecimalSeparator");
             horizontalScale = (float)modSettings.GetValue<int>("Layout", "HorizontalScale") / 100;
             verticalScale = (float)modSettings.GetValue<int>("Layout", "VerticalScale") / 100;
             horizontalPositionModifier = (float)modSettings.GetValue<int>("Layout", "HorizontalPosition") / 100;
             verticalPositionModifier = (float)modSettings.GetValue<int>("Layout", "VerticalPosition") / 100;
 
-            titleFontSizeScale = (float)modSettings.GetValue<int>("FontSizes", "TitleFontSize") / 100;
-            itemFontSizeScale = (float)modSettings.GetValue<int>("FontSizes", "ItemFontSize") / 100;
-            weightFontSizeScale = (float)modSettings.GetValue<int>("FontSizes", "WeightFontSize") / 100;
+            titleFontSizeScale = (float)modSettings.GetValue<int>("Text", "TitleFontSize") / 100;
+            itemFontSizeScale = (float)modSettings.GetValue<int>("Text", "ItemFontSize") / 100;
+            weightFontSizeScale = (float)modSettings.GetValue<int>("Text", "WeightFontSize") / 100;
+
+            titlePosYOffset = modSettings.GetValue<int>("Text", "TitleTextVerticalOffset");
+            itemPosYOffset = modSettings.GetValue<int>("Text", "ItemTextVerticalOffset");
+            weightPosYOffset = modSettings.GetValue<int>("Text", "WeightTextVerticalOffset");
 
             if(!SetKeyFromText(modSettings.GetValue<string>("Controls", "TakeKeyCode"), out takeKeyCode))
                 takeKeyCode = KeyCode.E;
@@ -497,6 +502,9 @@ namespace LootMenuMod
                     doesFit = false;
             }
             string output = Math.Round(GameManager.Instance.PlayerEntity.CarriedWeight, 1).ToString() + " + " + Math.Round(item.weightInKg, 1).ToString() + " / " + GameManager.Instance.PlayerEntity.MaxEncumbrance.ToString();
+            if(decimalSeparator == 1)
+                output = output.Replace(',', '.');
+
             return output;
         }
 
