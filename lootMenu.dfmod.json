@@ -1,15 +1,15 @@
 {
     "ModTitle": "LootMenu",
-    "ModVersion": "1.0",
+    "ModVersion": "1.1",
     "ModAuthor": "Shapur",
     "ContactInfo": "Shapur on the DFU forums",
-    "DFUnity_Version": "0.12.2",
+    "DFUnity_Version": "0.12.3",
     "ModDescription": "A mod allows for realtime looting by adding a modern lootmenu.",
     "GUID": "29c0aa70-6d79-44d8-ae8e-dfe6d2a3b253",
     "Files": [
-        "Assets/Game/Mods/LootMenu/LootMenu.dfmod.json",
+        "Assets/Game/Mods/LootMenu/Scripts/LootMenu.cs",
         "Assets/Game/Mods/LootMenu/Settings/modpresets.json",
-        "Assets/Game/Mods/LootMenu/Settings/modsettings.json",
-        "Assets/Game/Mods/LootMenu/Scripts/LootMenu.cs"
+        "Assets/Game/Mods/LootMenu/lootMenu.dfmod.json",
+        "Assets/Game/Mods/LootMenu/Settings/modsettings.json"
     ]
 }
