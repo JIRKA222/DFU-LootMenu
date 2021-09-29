@@ -43,6 +43,7 @@ namespace LootMenuMod
         static KeyCode takeKeyCode;
         static KeyCode upKeyCode;
 
+        List<Texture2D> itemTextures;
         Texture2D backgroundTexture;
 
         Vector2 itemFontSize;
@@ -55,6 +56,7 @@ namespace LootMenuMod
         Vector2 titleSize;
         Vector2 ignoredSize;
         Vector2 itemSize;
+        Vector2 itemTextureSize;
 
         Vector2 backgroundPos;
         Vector2 backgroundUseablePos;
@@ -63,8 +65,8 @@ namespace LootMenuMod
         Color redColor;
         Color shadowColor;
         
-        List<string> itemNameList = new List<string>();
-        List<string> itemOtherList = new List<string>();
+        List<string> itemNameList;
+        List<string> itemOtherList;
 
         float freeWeight;
         float shadowPosModifier;
@@ -74,6 +76,7 @@ namespace LootMenuMod
 
         static bool updatedSettings;
 
+        static int currentLayout; // 0 - Classic, 1 - icons
         static int numberOfItemsShown;
 
         static float horizontalScale;
@@ -132,9 +135,6 @@ namespace LootMenuMod
             else
                 shadowPosModifier = 1;
 
-            itemNameList = new List<string>();
-            itemOtherList = new List<string>();
-
             playerLayerMask = ~(1 << LayerMask.NameToLayer("Player"));
 
             mod.LoadSettings();
@@ -166,34 +166,27 @@ namespace LootMenuMod
                 {
                     if (hit.distance <= PlayerActivate.CorpseActivationDistance)
                     {      
+                        DaggerfallLoot oldLoot = loot;
+                        
                         if (LootCheck(hit, out loot))
                         {
-                            if (InputManager.Instance.GetKeyDown(openKeyCode))
-                            {    
-                                ActivateLootContainer(hit, loot);
-                                UpdateText(loot, out itemNameList, out itemOtherList);
-
-                                if (loot.Items.Count == 0)
-                                    enableLootMenu = false;
-                            }
-                            if (InputManager.Instance.GetKeyDown(takeKeyCode))
-                            {
-                                DoTransferItemFromIndex(loot, selectedItem);
-                                UpdateText(loot, out itemNameList, out itemOtherList);
-
-                                if (loot.Items.Count == 0)
-                                    enableLootMenu = false;
-                            }
                             if ((loot.ContainerType != LootContainerTypes.CorpseMarker && hit.distance > PlayerActivate.TreasureActivationDistance) || loot.ContainerType == LootContainerTypes.ShopShelves || loot.ContainerType == LootContainerTypes.HouseContainers)
                             {
                                 enableLootMenu = false;
                                 return;
                             }
                             
+                            if (InputManager.Instance.GetKeyDown(openKeyCode))
+                                ActivateLootContainer(hit, loot);
+                            
+                            if (InputManager.Instance.GetKeyDown(takeKeyCode))
+                                DoTransferItemFromIndex(loot, selectedItem);
+
+                            if (loot.Items.Count == 0)
+                                enableLootMenu = false;
+                            
                             if(!enableLootMenu)
                             {
-                                UpdateText(loot, out itemNameList, out itemOtherList);
-                                
                                 selectedItem = 0;
 
                                 if (loot.Items.Count == 0)
@@ -203,6 +196,12 @@ namespace LootMenuMod
                                 }
                                 else
                                     enableLootMenu = true;
+                            }
+
+                            if (oldLoot != loot)
+                            {
+                                UpdateText(loot, out itemNameList, out itemOtherList);
+                                UpdateItemTextures(loot, out itemTextures);
                             }
                         }
                         else
@@ -257,19 +256,83 @@ namespace LootMenuMod
                     if (i < numberOfItemsShown && currentItem < itemNameList.Count)
                     {
                         itemWidth = (int)daggerfallFont0003.CalculateTextWidth(itemNameList[currentItem], itemFontSize);
+                        
+                        if (currentLayout == 0)
+                        {
+                            newItemFontSize = GetItemMaxFontSize(itemWidth);
+                            itemPos = GetItemTextPoS(itemWidth, i, newItemFontSize);
+                            
+                            if (i == selectTexturePos)
+                                daggerfallFont0003.DrawText(itemNameList[currentItem], 
+                                itemPos, 
+                                newItemFontSize, redColor, shadowColor, shadowPosition * newItemFontSize / shadowPosModifier);
+                            else
+                                daggerfallFont0003.DrawText(itemNameList[currentItem], 
+                                itemPos,
+                                newItemFontSize, textColor, shadowColor, shadowPosition * newItemFontSize / shadowPosModifier);
+                        }
 
-                        newItemFontSize = GetItemMaxFontSize(itemWidth);
+                        else if (currentLayout == 1)
+                        {
+                            newItemFontSize = GetItemMaxFontSize(itemWidth, true);
+                            itemPos = GetItemTextPoS(itemWidth, i, newItemFontSize);
+                            
+                            if (i == selectTexturePos)
+                                daggerfallFont0003.DrawText(itemNameList[currentItem], 
+                                new Vector2(backgroundPos[0] + itemTextureSize[0] * (numberOfItemsShown / 2.5f), itemPos[1]), 
+                                newItemFontSize, redColor, shadowColor, shadowPosition * newItemFontSize / shadowPosModifier);
+                            else
+                                daggerfallFont0003.DrawText(itemNameList[currentItem], 
+                                new Vector2(backgroundPos[0] + itemTextureSize[0] * (numberOfItemsShown / 2.5f), itemPos[1]), 
+                                newItemFontSize, textColor, shadowColor, shadowPosition * newItemFontSize / shadowPosModifier);
 
-                        itemPos = GetItemTextPoS(itemWidth, i, newItemFontSize);
+                            Rect position = GetITemTextureRect(itemTextures[currentItem], 
+                            itemTextureSize, 
+                            new Vector2(backgroundPos[0] + itemTextureSize[0] * (numberOfItemsShown / 2.5f) - itemTextureSize[0] * 2.5f, itemPos[1] + itemSize[1]));
 
-                        if (i == selectTexturePos)
-                            daggerfallFont0003.DrawText(itemNameList[currentItem], itemPos, newItemFontSize, redColor, shadowColor, shadowPosition * newItemFontSize / shadowPosModifier);
-                        else
-                           daggerfallFont0003.DrawText(itemNameList[currentItem], itemPos, newItemFontSize, textColor, shadowColor, shadowPosition * newItemFontSize / shadowPosModifier);
+                            GUI.DrawTexture(position, itemTextures[currentItem]);   
+                        }
                     }
                     currentItem++;
                 }
             }
+        }
+
+        private Rect GetITemTextureRect(Texture2D inputTexture, Vector2 maxSize, Vector2 defaultPosition)
+        {   
+            Vector2 newPos = new Vector2();
+            Vector2 newSize = new Vector2();
+
+            float temp = 0;
+            
+            if (inputTexture.height > inputTexture.width)
+                {
+                    temp = maxSize[0] / inputTexture.height;
+                    newSize[0] = (int)Math.Round(temp * inputTexture.width);
+                    newSize[1] = (int)Math.Round(temp * inputTexture.height);
+                    if(newSize[1] > maxSize[1])
+                    {
+                        float temp2 = (float)maxSize[1] / newSize[1];
+                        newSize[0] = (int)Math.Round(temp2 * newSize[0]);
+                        newSize[1] = maxSize[1];
+                    }
+                }
+                else
+                {
+                    temp = maxSize[1] / inputTexture.width;
+                    newSize[0] = (int)Math.Round(temp * inputTexture.width);
+                    newSize[1] = (int)Math.Round(temp * inputTexture.height);
+                    if(newSize[0] > maxSize[0])
+                    {
+                        float temp2 = (float)maxSize[0] / newSize[0];
+                        newSize[1] = (int)Math.Round(temp2 * newSize[1]);
+                        newSize[0] = maxSize[0];
+                    }
+                }
+                newPos[0] = defaultPosition[0] + maxSize[0] + (maxSize[0] - newSize[0]) / 2;
+                newPos[1] = defaultPosition[1] - maxSize[1] + (maxSize[1] - newSize[1]) / 4 - newSize[1] / 3;
+                
+                return new Rect(newPos, newSize);   
         }
 
         Vector2 GetTitleMaxFontSize(int titleWidth)
@@ -289,12 +352,19 @@ namespace LootMenuMod
             return output;
         }
 
-        Vector2 GetItemMaxFontSize(int itemWidth)
+        Vector2 GetItemMaxFontSize(int itemWidth, bool icons = false)
         {
             Vector2 output = itemFontSize;
-
-            if (itemWidth * itemFontSize[0] > itemSize[0])
-                output = new Vector2(itemSize[0] / itemWidth, itemSize[0] / itemWidth);
+            if (icons)
+            {
+                if (itemWidth * itemFontSize[0] > itemSize[0] - itemTextureSize[0] * 2)
+                    output = new Vector2((itemSize[0] - itemTextureSize[0] * 2) / itemWidth, (itemSize[0] - itemTextureSize[0] * 2) / itemWidth);
+            }
+            else
+            {
+                if (itemWidth * itemFontSize[0] > itemSize[0])
+                    output = new Vector2(itemSize[0] / itemWidth, itemSize[0] / itemWidth);
+            }
 
             return output;
         }
@@ -345,6 +415,9 @@ namespace LootMenuMod
                 weightFontSize = weightFontSize * 0.8f;
             }
 
+            if (currentLayout == 1)
+                itemTextureSize = new Vector2(itemSize[1], itemSize[1] * 0.9f);
+            
             shadowPosition = DaggerfallUI.DaggerfallDefaultShadowPos;
         
             textColor = DaggerfallUI.DaggerfallDefaultTextColor;
@@ -366,6 +439,7 @@ namespace LootMenuMod
 
         static void LoadSettings(ModSettings modSettings, ModSettingsChange change)
         {
+            currentLayout = modSettings.GetValue<int>("Layout", "Layout");
             numberOfItemsShown = modSettings.GetValue<int>("Layout", "NumberOfItemsShown");
             decimalSeparator = modSettings.GetValue<int>("Text", "DecimalSeparator");
             horizontalScale = (float)modSettings.GetValue<int>("Layout", "HorizontalScale") / 100;
@@ -481,6 +555,21 @@ namespace LootMenuMod
                 outputItemsOther.Add(loot.entityName);
             
             outputItemsOther.Add(getWeightText(items.GetItem(0)));
+        }
+
+        private void UpdateItemTextures(DaggerfallLoot loot, out List<Texture2D> outputItemTextures)
+        {
+            ItemCollection items = loot.Items;
+            outputItemTextures = new List<Texture2D>();
+
+            if (items.Count == 0)
+                return;
+
+            for (int i = 0; i < items.Count; i++)
+            {
+                itemTextures.Add(itemHelper.GetInventoryImage(items.GetItem(i)).texture);
+                itemTextures[i].filterMode = FilterMode.Point;
+            }
         }
 
         private string getWeightText(DaggerfallUnityItem item, int index = 0)

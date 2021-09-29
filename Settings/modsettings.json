@@ -7,6 +7,17 @@
             "IsAdvanced": false,
             "Keys": [
                 {
+                    "Options": [
+                        "Classic",
+                        "Icons"
+                    ],
+                    "Value": 1,
+                    "Name": "Layout",
+                    "Description": null,
+                    "$version": "v1",
+                    "$type": "DaggerfallWorkshop.Game.Utility.ModSupport.ModSettings.MultipleChoiceKey"
+                },
+                {
                     "Min": 4,
                     "Max": 12,
                     "Value": 6,
