@@ -64,7 +64,10 @@ namespace LootMenuMod
         Color textColor;
         Color redColor;
         Color shadowColor;
+        Color magicColor;
+        Color redMagicColor;
         
+        List<Byte> itemSpecialPropersties;
         List<string> itemNameList;
         List<string> itemOtherList;
 
@@ -165,9 +168,7 @@ namespace LootMenuMod
                 if (hitSomething)
                 {
                     if (hit.distance <= PlayerActivate.CorpseActivationDistance)
-                    {      
-                        DaggerfallLoot oldLoot = loot;
-                        
+                    {
                         if (LootCheck(hit, out loot))
                         {
                             if ((loot.ContainerType != LootContainerTypes.CorpseMarker && hit.distance > PlayerActivate.TreasureActivationDistance) || loot.ContainerType == LootContainerTypes.ShopShelves || loot.ContainerType == LootContainerTypes.HouseContainers)
@@ -181,9 +182,6 @@ namespace LootMenuMod
                             
                             if (InputManager.Instance.GetKeyDown(takeKeyCode))
                                 DoTransferItemFromIndex(loot, selectedItem);
-
-                            if (loot.Items.Count == 0)
-                                enableLootMenu = false;
                             
                             if(!enableLootMenu)
                             {
@@ -198,10 +196,13 @@ namespace LootMenuMod
                                     enableLootMenu = true;
                             }
 
-                            if (oldLoot != loot)
+                            if (enableLootMenu)
                             {
+                                List<string> oldItemNameList = itemNameList;
                                 UpdateText(loot, out itemNameList, out itemOtherList);
-                                UpdateItemTextures(loot, out itemTextures);
+
+                                if (itemNameList != oldItemNameList)
+                                    UpdateItemTextures(loot, out itemTextures);
                             }
                         }
                         else
@@ -255,36 +256,33 @@ namespace LootMenuMod
                 {
                     if (i < numberOfItemsShown && currentItem < itemNameList.Count)
                     {
+                        Color selectedTextColor;
+
+                        if (itemSpecialPropersties[i] == 1 && i == selectTexturePos)
+                            selectedTextColor = redMagicColor;
+                        else if (itemSpecialPropersties[i] == 1)
+                            selectedTextColor = magicColor;
+                        else if (i == selectTexturePos)
+                            selectedTextColor = redColor;
+                        else
+                            selectedTextColor = textColor;
+                        
                         itemWidth = (int)daggerfallFont0003.CalculateTextWidth(itemNameList[currentItem], itemFontSize);
                         
                         if (currentLayout == 0)
                         {
                             newItemFontSize = GetItemMaxFontSize(itemWidth);
                             itemPos = GetItemTextPoS(itemWidth, i, newItemFontSize);
-                            
-                            if (i == selectTexturePos)
-                                daggerfallFont0003.DrawText(itemNameList[currentItem], 
-                                itemPos, 
-                                newItemFontSize, redColor, shadowColor, shadowPosition * newItemFontSize / shadowPosModifier);
-                            else
-                                daggerfallFont0003.DrawText(itemNameList[currentItem], 
-                                itemPos,
-                                newItemFontSize, textColor, shadowColor, shadowPosition * newItemFontSize / shadowPosModifier);
+
+                            daggerfallFont0003.DrawText(itemNameList[currentItem], itemPos, newItemFontSize, selectedTextColor, shadowColor, shadowPosition * newItemFontSize / shadowPosModifier);
                         }
 
                         else if (currentLayout == 1)
                         {
                             newItemFontSize = GetItemMaxFontSize(itemWidth, true);
                             itemPos = GetItemTextPoS(itemWidth, i, newItemFontSize);
-                            
-                            if (i == selectTexturePos)
-                                daggerfallFont0003.DrawText(itemNameList[currentItem], 
-                                new Vector2(backgroundPos[0] + itemTextureSize[0] * (numberOfItemsShown / 2.5f), itemPos[1]), 
-                                newItemFontSize, redColor, shadowColor, shadowPosition * newItemFontSize / shadowPosModifier);
-                            else
-                                daggerfallFont0003.DrawText(itemNameList[currentItem], 
-                                new Vector2(backgroundPos[0] + itemTextureSize[0] * (numberOfItemsShown / 2.5f), itemPos[1]), 
-                                newItemFontSize, textColor, shadowColor, shadowPosition * newItemFontSize / shadowPosModifier);
+
+                            daggerfallFont0003.DrawText(itemNameList[currentItem], new Vector2(backgroundPos[0] + itemTextureSize[0] * (numberOfItemsShown / 2.5f), itemPos[1]), newItemFontSize, selectedTextColor, shadowColor, shadowPosition * newItemFontSize / shadowPosModifier);
 
                             Rect position = GetITemTextureRect(itemTextures[currentItem], 
                             itemTextureSize, 
@@ -423,6 +421,8 @@ namespace LootMenuMod
             textColor = DaggerfallUI.DaggerfallDefaultTextColor;
             redColor = Color.red;
             shadowColor = DaggerfallUI.DaggerfallDefaultShadowColor;
+            magicColor = Color.cyan;
+            redMagicColor = Color.blue;
         }
 
         private static bool SetKeyFromText(string text, out KeyCode result) //"Inspired" by code from Mighty Foot from numidium (https://www.nexusmods.com/daggerfallunity/mods/162)
@@ -530,23 +530,27 @@ namespace LootMenuMod
         private void UpdateText(DaggerfallLoot loot, out List<string> outputItemsNames, out List<string> outputItemsOther)
         {
             ItemCollection items = loot.Items;
+            
             outputItemsNames = new List<string>();
             outputItemsOther = new List<string>();
+            itemSpecialPropersties = new List<Byte>();
 
             if (items.Count == 0)
                 return;
 
             for (int i = 0; i < items.Count; i++)
             {
-                string itemName;
-
                 item = items.GetItem(i);
-                itemName = itemHelper.ResolveItemLongName(item);
 
                 if (item.IsAStack())
                     outputItemsNames.Add(itemHelper.ResolveItemLongName(item) + " " + item.stackCount.ToString());
                 else
                     outputItemsNames.Add(itemHelper.ResolveItemLongName(item));
+                
+                if (item.IsEnchanted)
+                    itemSpecialPropersties.Add(1);
+                else
+                    itemSpecialPropersties.Add(0);
             }
 
             if(String.IsNullOrEmpty(loot.entityName))
@@ -554,6 +558,7 @@ namespace LootMenuMod
             else
                 outputItemsOther.Add(loot.entityName);
             
+            if (items.GetItem(0) != null)
             outputItemsOther.Add(getWeightText(items.GetItem(0)));
         }
 
