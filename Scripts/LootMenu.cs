@@ -45,6 +45,7 @@ namespace LootMenuMod
 
         List<Texture2D> itemTextures;
         Texture2D backgroundTexture;
+        Texture2D weightTexture;
 
         Vector2 itemFontSize;
         Vector2 titleFontSize;
@@ -78,8 +79,9 @@ namespace LootMenuMod
         bool enableLootMenu;
 
         static bool updatedSettings;
+        static bool showWeightIcon;
 
-        static int currentLayout; // 0 - Classic, 1 - icons
+        static int currentLayout; // 0 - Classic, 1 - Icons
         static int numberOfItemsShown;
 
         static float horizontalScale;
@@ -132,6 +134,9 @@ namespace LootMenuMod
             if(!TextureReplacement.TryImportTextureFromLooseFiles("LootMenu/lootMenuBackground", false, false, true, out backgroundTexture))
                 throw new Exception("LootMenu: Could not load lootMenuBackground texture.");
             backgroundTexture.filterMode = FilterMode.Point;
+
+            weightTexture = itemHelper.GetContainerImage(InventoryContainerImages.Backpack).texture;
+            weightTexture.filterMode = FilterMode.Point;
 
             if (DaggerfallUnity.Settings.SDFFontRendering)
                 shadowPosModifier = 3f;
@@ -241,7 +246,6 @@ namespace LootMenuMod
 
                 itemOtherList[1] = getWeightText(loot.Items.GetItem(selectedItem), selectedItem);
                 
-                
                 GUI.DrawTexture(new Rect(backgroundPos, backgroundSize), backgroundTexture);
 
                 daggerfallFont0001.DrawText(itemOtherList[0], titlePos, newTitleFontSize, textColor, shadowColor, shadowPosition * newTitleFontSize / shadowPosModifier);
@@ -250,22 +254,35 @@ namespace LootMenuMod
                     daggerfallFont0003.DrawText(itemOtherList[1], weightPos, weightFontSize, textColor, shadowColor, shadowPosition * weightFontSize / shadowPosModifier);
                 else
                     daggerfallFont0003.DrawText(itemOtherList[1], weightPos, weightFontSize, redColor, shadowColor, shadowPosition * weightFontSize / shadowPosModifier);
-                
+
+                if(showWeightIcon)
+                {
+                    if (DaggerfallUnity.Settings.SDFFontRendering)
+                        GUI.DrawTexture(new Rect(new Vector2(weightPos[0] + (weightWidth * weightFontSize[0]) + (titleSize[1] / 4), weightPos[1] - (titleSize[1] / 12)), new Vector2(titleSize[1] * 0.5f, titleSize[1] * 0.5f)), weightTexture);
+                    else
+                        GUI.DrawTexture(new Rect(new Vector2(weightPos[0] + (weightWidth * weightFontSize[0]) + (titleSize[1] / 24), weightPos[1] - (titleSize[1] / 12)), new Vector2(titleSize[1] * 0.5f, titleSize[1] * 0.5f)), weightTexture);
+                }
+
                 currentItem = itemDisplayOffset;
+                Debug.Log("");
                 for (int i = 0; i < itemNameList.Count; i++)
                 {
                     if (i < numberOfItemsShown && currentItem < itemNameList.Count)
                     {
                         Color selectedTextColor;
 
-                        if (itemSpecialPropersties[i] == 1 && i == selectTexturePos)
-                            selectedTextColor = redMagicColor;
-                        else if (itemSpecialPropersties[i] == 1)
+                        if (itemSpecialPropersties[currentItem] == 1)
+                        {
                             selectedTextColor = magicColor;
-                        else if (i == selectTexturePos)
-                            selectedTextColor = redColor;
+                            if (i == selectTexturePos)
+                                selectedTextColor = redMagicColor;
+                        }
                         else
+                        {
                             selectedTextColor = textColor;
+                            if (i == selectTexturePos)
+                                selectedTextColor = redColor;
+                        }
                         
                         itemWidth = (int)daggerfallFont0003.CalculateTextWidth(itemNameList[currentItem], itemFontSize);
                         
@@ -284,8 +301,7 @@ namespace LootMenuMod
 
                             daggerfallFont0003.DrawText(itemNameList[currentItem], new Vector2(backgroundPos[0] + itemTextureSize[0] * (numberOfItemsShown / 2.5f), itemPos[1]), newItemFontSize, selectedTextColor, shadowColor, shadowPosition * newItemFontSize / shadowPosModifier);
 
-                            Rect position = GetITemTextureRect(itemTextures[currentItem], 
-                            itemTextureSize, 
+                            Rect position = GetITemTextureRect(itemTextures[currentItem], itemTextureSize, 
                             new Vector2(backgroundPos[0] + itemTextureSize[0] * (numberOfItemsShown / 2.5f) - itemTextureSize[0] * 2.5f, itemPos[1] + itemSize[1]));
 
                             GUI.DrawTexture(position, itemTextures[currentItem]);   
@@ -455,6 +471,8 @@ namespace LootMenuMod
             itemPosYOffset = modSettings.GetValue<int>("Text", "ItemTextVerticalOffset");
             weightPosYOffset = modSettings.GetValue<int>("Text", "WeightTextVerticalOffset");
 
+            showWeightIcon = modSettings.GetValue<bool>("Layout", "ShowCarriedWeightIcon");
+
             if(!SetKeyFromText(modSettings.GetValue<string>("Controls", "TakeKeyCode"), out takeKeyCode))
                 takeKeyCode = KeyCode.E;
 
@@ -552,14 +570,13 @@ namespace LootMenuMod
                 else
                     itemSpecialPropersties.Add(0);
             }
-
             if(String.IsNullOrEmpty(loot.entityName))
                 outputItemsOther.Add("Lootpile");
             else
                 outputItemsOther.Add(loot.entityName);
             
             if (items.GetItem(0) != null)
-            outputItemsOther.Add(getWeightText(items.GetItem(0)));
+                outputItemsOther.Add(getWeightText(items.GetItem(0)));
         }
 
         private void UpdateItemTextures(DaggerfallLoot loot, out List<Texture2D> outputItemTextures)
